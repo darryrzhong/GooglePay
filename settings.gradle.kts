@@ -27,3 +27,4 @@ enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
 include(":app")
 //include(":gpPay")
+include(":pay")
