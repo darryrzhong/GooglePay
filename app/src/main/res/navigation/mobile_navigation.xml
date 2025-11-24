@@ -12,14 +12,14 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="com.gp.pay.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        android:id="@+id/nav_inapp"
+        android:name="com.gp.pay.ui.inapp.InappFragment"
+        android:label="@string/menu_inapp"
+        tools:layout="@layout/fragment_inapp" />
 
     <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.gp.pay.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
+        android:id="@+id/nav_subs"
+        android:name="com.gp.pay.ui.subs.SubsFragment"
+        android:label="@string/menu_subs"
+        tools:layout="@layout/fragment_subs" />
 </navigation>

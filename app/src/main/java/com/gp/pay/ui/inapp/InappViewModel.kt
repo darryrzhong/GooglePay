@@ -1,13 +1,13 @@
-package com.gp.pay.ui.slideshow
+package com.gp.pay.ui.inapp
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
-class SlideshowViewModel : ViewModel() {
+class InappViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
-        value = "This is slideshow Fragment"
+        value = "This is inapp fragment"
     }
     val text: LiveData<String> = _text
 }

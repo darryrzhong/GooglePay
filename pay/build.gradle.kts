@@ -34,11 +34,10 @@ android {
 
 dependencies {
     implementation(libs.play.services)
-    implementation(libs.billing.client)
+    api(libs.billing.client)
     implementation(libs.billing.client.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
