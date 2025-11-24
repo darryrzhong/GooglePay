@@ -1,12 +1,12 @@
-package com.mt.libpay.billing.service.onetime
+package com.google.pay.billing.service.onetime
 
 import android.app.Activity
 import androidx.annotation.UiThread
-import com.mt.libpay.billing.service.BillingBindService
-import com.mt.libpay.billing.service.BillingService
-import com.mt.libpay.model.AppBillingResult
-import com.mt.libpay.model.AppProductDetails
-import com.mt.libpay.model.BillingParams
+import com.google.pay.billing.service.BillingBindService
+import com.google.pay.billing.service.BillingService
+import com.google.pay.model.AppBillingResult
+import com.google.pay.model.AppProductDetails
+import com.google.pay.model.BillingParams
 
 /**
  * <pre>

@@ -1,4 +1,4 @@
-package com.mt.libpay.billing
+package com.google.pay.billing
 
 import android.content.Context
 import android.util.Log
@@ -10,12 +10,12 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
-import com.mt.libpay.AppBillingService
-import com.mt.libpay.billing.service.BillingServiceManager
-import com.mt.libpay.billing.service.onetime.OneTimeService
-import com.mt.libpay.billing.service.subscription.SubscriptionService
-import com.mt.libpay.model.BillingPayEvent
-import com.mt.libpay.model.SubscriptionMode
+import com.google.pay.AppBillingService
+import com.google.pay.billing.service.BillingServiceManager
+import com.google.pay.billing.service.onetime.OneTimeService
+import com.google.pay.billing.service.subscription.SubscriptionService
+import com.google.pay.model.BillingPayEvent
+import com.google.pay.model.SubscriptionMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

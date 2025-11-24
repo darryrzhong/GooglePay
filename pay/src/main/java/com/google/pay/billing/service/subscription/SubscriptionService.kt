@@ -1,14 +1,14 @@
-package com.mt.libpay.billing.service.subscription
+package com.google.pay.billing.service.subscription
 
 import android.app.Activity
 import androidx.annotation.UiThread
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.billing.service.BillingBindService
-import com.mt.libpay.billing.service.BillingService
-import com.mt.libpay.model.AppBillingResult
-import com.mt.libpay.model.AppSubscribeDetails
-import com.mt.libpay.model.BillingSubsParams
-import com.mt.libpay.model.SubsOfferParams
+import com.google.pay.billing.service.BillingBindService
+import com.google.pay.billing.service.BillingService
+import com.google.pay.model.AppBillingResult
+import com.google.pay.model.AppSubscribeDetails
+import com.google.pay.model.BillingSubsParams
+import com.google.pay.model.SubsOfferParams
 
 /**
  * <pre>

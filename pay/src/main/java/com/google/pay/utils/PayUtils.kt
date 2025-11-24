@@ -1,9 +1,9 @@
-package com.mt.libpay.utils
+package com.google.pay.utils
 
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.model.BillingSubsParams
-import com.mt.libpay.model.SubsOfferParams
+import com.google.pay.model.BillingSubsParams
+import com.google.pay.model.SubsOfferParams
 
 /**
  * <pre>

@@ -1,12 +1,12 @@
-package com.mt.libpay
+package com.google.pay
 
 import android.app.Dialog
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.mt.libpay.billing.AppBillingClient
-import com.mt.libpay.model.BillingPayEvent
+import com.google.pay.billing.AppBillingClient
+import com.google.pay.model.BillingPayEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel

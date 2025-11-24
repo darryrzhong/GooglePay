@@ -1,7 +1,7 @@
-package com.mt.libpay.billing.service
+package com.google.pay.billing.service
 
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.model.BillingPayEvent
+import com.google.pay.model.BillingPayEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.io.Closeable

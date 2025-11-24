@@ -1,6 +1,6 @@
-package com.mt.libpay
+package com.google.pay
 
-import com.mt.libpay.AppBillingResponseCode.SERVICE_UNAVAILABLE
+import com.google.pay.AppBillingResponseCode.SERVICE_UNAVAILABLE
 
 
 /**

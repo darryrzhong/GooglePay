@@ -1,8 +1,8 @@
-package com.mt.libpay.utils
+package com.google.pay.utils
 
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.model.BillingProductType
-import com.mt.libpay.model.PurchaseProfileInfo
+import com.google.pay.model.BillingProductType
+import com.google.pay.model.PurchaseProfileInfo
 import org.json.JSONObject
 
 /**

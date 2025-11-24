@@ -1,12 +1,12 @@
-package com.mt.libpay.billing.service
+package com.google.pay.billing.service
 
-import com.mt.libpay.billing.AppBillingClient
-import com.mt.libpay.billing.service.onetime.OneTimeService
-import com.mt.libpay.billing.service.onetime.OneTimeServiceEmptyImpl
-import com.mt.libpay.billing.service.onetime.OneTimeServiceImpl
-import com.mt.libpay.billing.service.subscription.SubscriptionService
-import com.mt.libpay.billing.service.subscription.SubscriptionServiceEmptyImpl
-import com.mt.libpay.billing.service.subscription.SubscriptionServiceImpl
+import com.google.pay.billing.AppBillingClient
+import com.google.pay.billing.service.onetime.OneTimeService
+import com.google.pay.billing.service.onetime.OneTimeServiceEmptyImpl
+import com.google.pay.billing.service.onetime.OneTimeServiceImpl
+import com.google.pay.billing.service.subscription.SubscriptionService
+import com.google.pay.billing.service.subscription.SubscriptionServiceEmptyImpl
+import com.google.pay.billing.service.subscription.SubscriptionServiceImpl
 import java.lang.IllegalArgumentException
 
 /**

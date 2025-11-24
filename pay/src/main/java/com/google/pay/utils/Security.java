@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mt.libpay.utils;
+package com.google.pay.utils;
 /*
  * This class is an sample of how you can check to make sure your purchases on the device came
  * from Google Play. Putting code like this on your server will provide additional protection.
@@ -28,7 +28,7 @@ import android.util.Base64;
 import android.util.Log;
 
 
-import com.mt.libpay.billing.AppBillingClient;
+import com.google.pay.billing.AppBillingClient;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;

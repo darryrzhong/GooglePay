@@ -1,12 +1,12 @@
-package com.mt.libpay.billing.service.subscription
+package com.google.pay.billing.service.subscription
 
 import android.app.Activity
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.model.AppBillingResult
-import com.mt.libpay.model.AppSubscribeDetails
-import com.mt.libpay.model.BillingPayEvent
-import com.mt.libpay.model.BillingSubsParams
-import com.mt.libpay.model.SubsOfferParams
+import com.google.pay.model.AppBillingResult
+import com.google.pay.model.AppSubscribeDetails
+import com.google.pay.model.BillingPayEvent
+import com.google.pay.model.BillingSubsParams
+import com.google.pay.model.SubsOfferParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.io.Closeable

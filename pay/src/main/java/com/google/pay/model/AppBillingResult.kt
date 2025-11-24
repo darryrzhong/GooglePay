@@ -1,6 +1,6 @@
-package com.mt.libpay.model
+package com.google.pay.model
 
-import com.mt.libpay.AppBillingResponseCode
+import com.google.pay.AppBillingResponseCode
 
 /**
  * <pre>

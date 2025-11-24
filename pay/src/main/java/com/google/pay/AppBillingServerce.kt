@@ -1,7 +1,7 @@
-package com.mt.libpay
+package com.google.pay
 
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.model.BillingProductType
+import com.google.pay.model.BillingProductType
 
 /**
  * <pre>

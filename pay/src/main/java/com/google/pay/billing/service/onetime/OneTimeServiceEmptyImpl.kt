@@ -1,11 +1,11 @@
-package com.mt.libpay.billing.service.onetime
+package com.google.pay.billing.service.onetime
 
 import android.app.Activity
 import com.android.billingclient.api.Purchase
-import com.mt.libpay.model.AppBillingResult
-import com.mt.libpay.model.AppProductDetails
-import com.mt.libpay.model.BillingParams
-import com.mt.libpay.model.BillingPayEvent
+import com.google.pay.model.AppBillingResult
+import com.google.pay.model.AppProductDetails
+import com.google.pay.model.BillingParams
+import com.google.pay.model.BillingPayEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.io.Closeable

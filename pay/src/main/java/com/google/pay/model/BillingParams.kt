@@ -1,6 +1,6 @@
-package com.mt.libpay.model
+package com.google.pay.model
 
-import com.mt.libpay.model.BillingSubsParams.Builder
+import com.google.pay.model.BillingSubsParams.Builder
 import java.io.Serializable
 
 /**

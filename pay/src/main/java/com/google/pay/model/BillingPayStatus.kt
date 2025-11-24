@@ -1,4 +1,4 @@
-package com.mt.libpay.model
+package com.google.pay.model
 
 import com.android.billingclient.api.Purchase
 

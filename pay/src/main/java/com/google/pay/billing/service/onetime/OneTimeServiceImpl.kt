@@ -1,4 +1,4 @@
-package com.mt.libpay.billing.service.onetime
+package com.google.pay.billing.service.onetime
 
 import android.app.Activity
 import com.android.billingclient.api.AcknowledgePurchaseParams
@@ -16,15 +16,15 @@ import com.android.billingclient.api.consumePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.android.billingclient.api.querySkuDetails
-import com.mt.libpay.AppBillingResponseCode
-import com.mt.libpay.billing.AppBillingClient
-import com.mt.libpay.handleTryEach
-import com.mt.libpay.model.AppBillingResult
-import com.mt.libpay.model.AppProductDetails
-import com.mt.libpay.model.BillingParams
-import com.mt.libpay.model.BillingPayEvent
-import com.mt.libpay.model.BillingProductType
-import com.mt.libpay.utils.PayUtils
+import com.google.pay.AppBillingResponseCode
+import com.google.pay.billing.AppBillingClient
+import com.google.pay.handleTryEach
+import com.google.pay.model.AppBillingResult
+import com.google.pay.model.AppProductDetails
+import com.google.pay.model.BillingParams
+import com.google.pay.model.BillingPayEvent
+import com.google.pay.model.BillingProductType
+import com.google.pay.utils.PayUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
