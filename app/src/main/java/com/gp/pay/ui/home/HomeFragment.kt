@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.google.pay.billing.GooglePayClient
 import com.gp.pay.databinding.FragmentHomeBinding
 
 class HomeFragment : Fragment() {
@@ -38,5 +39,10 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        GooglePayClient.getInstance().startConnection()
     }
 }
