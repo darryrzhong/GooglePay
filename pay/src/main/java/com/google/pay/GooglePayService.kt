@@ -15,7 +15,7 @@ import com.google.pay.model.BillingProductType
  *     @since   : 2023/8/15
  * </pre>
  */
-interface AppBillingService {
+interface GooglePayService {
 
     /**
      * 获取google play后台配置的一次性消耗型商品的productID
@@ -48,17 +48,11 @@ interface AppBillingService {
      * @param productType  交易商品类型
      * @param purchases 交易信息
      * */
-   suspend fun handlePurchasesProcess(
+    suspend fun handlePurchasesProcess(
         isPay: Boolean,
         productType: BillingProductType,
         purchases: Purchase
     )
-
-    /**
-     * 获取google play 后台的支付key
-     * @return google play key
-     * */
-    fun getGooglePayPubId(): String
 
 
     /**

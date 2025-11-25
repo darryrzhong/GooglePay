@@ -10,8 +10,9 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
-import com.google.pay.AppBillingService
+import com.google.pay.GooglePayService
 import com.google.pay.billing.service.BillingServiceManager
+import com.google.pay.billing.service.BillingServiceManager.getService
 import com.google.pay.billing.service.onetime.OneTimeService
 import com.google.pay.billing.service.subscription.SubscriptionService
 import com.google.pay.model.BillingPayEvent
@@ -66,7 +67,7 @@ class GooglePayClient private constructor() {
     private lateinit var applicationContext: Context
 
 
-    internal lateinit var appBillingService: AppBillingService
+    internal lateinit var appBillingService: GooglePayService
 
     //用单例，以避免对某一个事件进行多次 PurchasesUpdatedListener 回调
     private val billingClient: BillingClient by lazy {
@@ -184,18 +185,28 @@ class GooglePayClient private constructor() {
     }
 
     /**
-     * 获取服务
+     * 获取服务-Java调用
      * @param clazz 服务类型
      * */
-    fun <T> getService(clazz: Class<T>): T {
+    fun <T> getPayService(clazz: Class<T>): T {
         return BillingServiceManager.getService(clazz)
     }
 
+    @PublishedApi
+    internal fun <T> internalGetService(clazz: Class<T>): T {
+        return BillingServiceManager.getService(clazz)
+    }
+
+    public inline fun <reified T> getPayService(): T {
+        return internalGetService(T::class.java)
+    }
+
+
     private fun queryPurchases() {
         billingScope.launch {
-            getService(OneTimeService::class.java).queryPurchases()
+            getService<OneTimeService>().queryPurchases()
             if (subscription) {
-                getService(SubscriptionService::class.java).queryPurchases()
+                getService<SubscriptionService>().queryPurchases()
             }
         }
 
@@ -203,17 +214,17 @@ class GooglePayClient private constructor() {
 
     private fun queryProductDetails() {
         billingScope.launch {
-            getService(OneTimeService::class.java).queryProductDetails()
+            getService<OneTimeService>().queryProductDetails()
             if (subscription) {
-                getService(SubscriptionService::class.java).queryProductDetails()
+                getService<SubscriptionService>().queryProductDetails()
             }
         }
     }
 
     private suspend fun handlePurchases(purchases: List<Purchase>, isPay: Boolean) {
-        getService(OneTimeService::class.java).handlePurchases(purchases, isPay)
+        getService<OneTimeService>().handlePurchases(purchases, isPay)
         if (subscription) {
-            getService(SubscriptionService::class.java).handlePurchases(purchases, isPay)
+            getService<SubscriptionService>().handlePurchases(purchases, isPay)
         }
     }
 
@@ -222,7 +233,7 @@ class GooglePayClient private constructor() {
     }
 
 
-    fun initBillingClient(context: Context, appBillingService: AppBillingService) = apply {
+    fun initBillingClient(context: Context, appBillingService: GooglePayService) = apply {
         applicationContext = context
         this.appBillingService = appBillingService
     }
@@ -244,11 +255,6 @@ class GooglePayClient private constructor() {
         if (!this::applicationContext.isInitialized || !this::appBillingService.isInitialized) {
             throw RuntimeException("Please call the initBillingClient method in application first")
         }
-    }
-
-    fun getGooglePayId(): String {
-        checkInitialized()
-        return appBillingService.getGooglePayPubId()
     }
 
 
@@ -283,8 +289,8 @@ class GooglePayClient private constructor() {
             if (tries <= MAX_RETRY_ATTEMPT && !isConnectionEstablished) {
                 try {
                     if (deBug) {
-                        appBillingService.printLog(TAG, "Google play 重新连接 $tries")
-                        Log.d(TAG, "Google play 重新连接 $tries")
+                        appBillingService.printLog(TAG, "Google play Reconnect $tries")
+                        Log.d(TAG, "Google play Reconnect $tries")
                     }
                     tries++  // 在尝试连接前递增
                     billingClient.startConnection(billingClientStateListener)
@@ -301,7 +307,7 @@ class GooglePayClient private constructor() {
                 if (deBug) {
                     appBillingService.printLog(
                         TAG,
-                        "Google play 重连失败，已达到最大重试次数: $MAX_RETRY_ATTEMPT"
+                        "Google play failed to reconnect, the maximum number of retries has been reached: $MAX_RETRY_ATTEMPT"
                     )
                 }
             }

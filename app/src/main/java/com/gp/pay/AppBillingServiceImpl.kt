@@ -2,7 +2,7 @@ package com.gp.pay
 
 import android.util.Log
 import com.android.billingclient.api.Purchase
-import com.google.pay.AppBillingService
+import com.google.pay.GooglePayService
 import com.google.pay.model.BillingProductType
 
 /**
@@ -13,7 +13,7 @@ import com.google.pay.model.BillingProductType
  *     @since  : 2025/11/24
  * </pre>
  */
-class AppBillingServiceImpl private constructor() : AppBillingService {
+class AppBillingServiceImpl private constructor() : GooglePayService {
 
     companion object {
         val instance by lazy { AppBillingServiceImpl() }
@@ -39,9 +39,6 @@ class AppBillingServiceImpl private constructor() : AppBillingService {
         TODO("Not yet implemented")
     }
 
-    override fun getGooglePayPubId(): String {
-        return ""
-    }
 
     override fun printLog(tag: String, msg: String) {
         Log.d(tag, msg)

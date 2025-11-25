@@ -203,10 +203,6 @@ internal class SubscriptionServiceImpl : SubscriptionService {
      * @param isPay 是否是刚刚购买的
      * */
     override suspend fun consumePurchases(purchase: Purchase, isPay: Boolean) {
-        if (!PayUtils.isSignatureValid(purchase)) {
-            //验证签名失败
-            return
-        }
         //去Google play 消耗掉订单
         val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
             .setPurchaseToken(purchase.purchaseToken).build()

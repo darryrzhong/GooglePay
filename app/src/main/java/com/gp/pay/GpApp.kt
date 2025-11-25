@@ -2,6 +2,7 @@ package com.gp.pay
 
 import android.app.Application
 import com.google.pay.billing.GooglePayClient
+import com.google.pay.billing.service.onetime.OneTimeService
 import com.google.pay.model.SubscriptionMode
 
 /**
@@ -21,6 +22,5 @@ class GpApp : Application() {
             .setSubscriptionMode(SubscriptionMode.SingleMode)
             .setSubscription(true)
             .initBillingClient(this, AppBillingServiceImpl.instance)
-
     }
 }

@@ -7,66 +7,50 @@ import com.google.pay.billing.service.onetime.OneTimeServiceImpl
 import com.google.pay.billing.service.subscription.SubscriptionService
 import com.google.pay.billing.service.subscription.SubscriptionServiceEmptyImpl
 import com.google.pay.billing.service.subscription.SubscriptionServiceImpl
-import java.lang.IllegalArgumentException
 
 /**
  * <pre>
  *     类描述  : Billing sdk服务管理者，提供服务&创建服务
- *
- *
  *     @author : never
  *     @since   : 2023/11/14
  * </pre>
  */
 internal object BillingServiceManager {
 
-    private val services = hashMapOf<String, Any>()
-    private val servicesEmpty = hashMapOf<String, Any>()
-    private val servicesMap = hashMapOf<String, String>()
+    // 真实服务映射
+    private val realServices = mapOf<Class<*>, Any>(
+        OneTimeService::class.java to OneTimeServiceImpl(),
+        SubscriptionService::class.java to SubscriptionServiceImpl()
+    )
 
-    private val oneTimeServiceImpl: OneTimeServiceImpl by lazy { OneTimeServiceImpl() }
-    private val subscriptionServiceImpl: SubscriptionServiceImpl by lazy { SubscriptionServiceImpl() }
+    // 空实现服务映射
+    private val emptyServices = mapOf<Class<*>, Any>(
+        OneTimeService::class.java to OneTimeServiceEmptyImpl(),
+        SubscriptionService::class.java to SubscriptionServiceEmptyImpl()
+    )
 
-    //空实现
-    private val oneTimeServiceEmptyImpl: OneTimeServiceEmptyImpl by lazy { OneTimeServiceEmptyImpl() }
-    private val subscriptionServiceEmptyImpl: SubscriptionServiceEmptyImpl by lazy { SubscriptionServiceEmptyImpl() }
-
-    init {
-        servicesMap[OneTimeService::class.java.simpleName] = OneTimeServiceImpl::class.java.name
-        servicesMap[SubscriptionService::class.java.simpleName] =
-            SubscriptionServiceImpl::class.java.name
-        services[OneTimeService::class.java.simpleName] = oneTimeServiceImpl
-        services[SubscriptionService::class.java.simpleName] = subscriptionServiceImpl
-
-        servicesEmpty[OneTimeService::class.java.simpleName] = oneTimeServiceEmptyImpl
-        servicesEmpty[SubscriptionService::class.java.simpleName] = subscriptionServiceEmptyImpl
+    /**
+     * 获取服务 (内联函数，支持泛型实化)
+     * 使用方式: BillingServiceManager.getService<OneTimeService>()
+     */
+    inline fun <reified T> getService(): T {
+        return getService(T::class.java)
     }
 
     /**
      * 获取服务
      * @param clazz 服务类型
-     * */
+     */
+    @Suppress("UNCHECKED_CAST")
     fun <T> getService(clazz: Class<T>): T {
-        val clazzName = clazz.simpleName
-
-        val ann = clazz.getAnnotation(BillingBindService::class.java)
-        if (ann != null) {
-            val serviceName = ann.serviceName
-            if (!servicesMap.containsKey(serviceName)) {
-                throw IllegalArgumentException("The $clazzName service does not exist")
-            }
-            if (GooglePayClient.getInstance().isGoogleAvailable()) {
-                if (services.containsKey(serviceName)) {
-                    return services[serviceName] as T
-                }
-            } else {
-                if (servicesEmpty.containsKey(serviceName)) {
-                    return servicesEmpty[serviceName] as T
-                }
-            }
-
+        // 根据 Google Play 服务是否可用，决定使用真实服务还是空实现
+        val map = if (GooglePayClient.getInstance().isGoogleAvailable()) {
+            realServices
+        } else {
+            emptyServices
         }
-        throw IllegalArgumentException("The $clazzName service does not exist")
-    }
 
+        return (map[clazz] as? T)
+            ?: throw IllegalArgumentException("The ${clazz.simpleName} service does not exist")
+    }
 }

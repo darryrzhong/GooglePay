@@ -112,7 +112,7 @@ internal class OneTimeServiceImpl : OneTimeService {
             GooglePayClient.getInstance().appBillingService.getOneTimeConsumableProducts()
         //非消耗商品
         val noConsumableProductIds =
-            GooglePayClient.getInstance().appBillingService.getOneTimeConsumableProducts()
+            GooglePayClient.getInstance().appBillingService.getOneTimeNonConsumableProducts()
         val productIds = consumableProductIds + noConsumableProductIds
         if (productIds.isEmpty()) {
             if (GooglePayClient.getInstance().deBug) {
@@ -232,10 +232,6 @@ internal class OneTimeServiceImpl : OneTimeService {
      * @param isPay 是否是刚刚购买的
      * */
     override suspend fun consumePurchases(purchase: Purchase, isPay: Boolean) {
-        if (!PayUtils.isSignatureValid(purchase)) {
-            //验证签名失败
-            return
-        }
         //是否是非消耗品
         val isNoConsumePurchase = purchase.products.all { product ->
             product in _noConsumableProductIds
