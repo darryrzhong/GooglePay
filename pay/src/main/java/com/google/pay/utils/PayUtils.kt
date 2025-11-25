@@ -16,10 +16,6 @@ import com.google.pay.model.SubsOfferParams
  */
 internal object PayUtils {
 
-    fun isSignatureValid(purchase: Purchase): Boolean {
-        return Security.verifyPurchase(purchase.originalJson, purchase.signature)
-    }
-
     /**
      * 获取订阅商品中的购买token
      *@return  offerToken 购买具体订阅方案的唯一标识token

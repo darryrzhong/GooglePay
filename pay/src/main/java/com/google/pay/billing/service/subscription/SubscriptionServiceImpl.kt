@@ -111,7 +111,9 @@ internal class SubscriptionServiceImpl : SubscriptionService {
             return
         }
         //先从app业务端拉取服务端下发的Google play 后台配置的商品列表
-        val productIds = GooglePayClient.getInstance().appBillingService.getSubscribeProducts()
+        val productIds = withContext(Dispatchers.IO){
+            GooglePayClient.getInstance().appBillingService.getSubscribeProducts()
+        }
         if (productIds.isEmpty()) {
             if (GooglePayClient.getInstance().deBug) {
                 GooglePayClient.getInstance().appBillingService.printLog(

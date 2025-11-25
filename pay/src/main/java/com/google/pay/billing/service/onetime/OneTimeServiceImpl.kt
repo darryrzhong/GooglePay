@@ -108,11 +108,14 @@ internal class OneTimeServiceImpl : OneTimeService {
         }
         //1.先从app业务端拉取服务端下发的Google play 后台配置的商品列表
         //消耗商品
-        val consumableProductIds =
+        val consumableProductIds = withContext(Dispatchers.IO) {
             GooglePayClient.getInstance().appBillingService.getOneTimeConsumableProducts()
+        }
+
         //非消耗商品
-        val noConsumableProductIds =
+        val noConsumableProductIds = withContext(Dispatchers.IO) {
             GooglePayClient.getInstance().appBillingService.getOneTimeNonConsumableProducts()
+        }
         val productIds = consumableProductIds + noConsumableProductIds
         if (productIds.isEmpty()) {
             if (GooglePayClient.getInstance().deBug) {
@@ -245,7 +248,7 @@ internal class OneTimeServiceImpl : OneTimeService {
         val consumeParams =
             ConsumeParams.newBuilder().setPurchaseToken(purchase.purchaseToken)
                 .build()
-        val consumeResult =withContext(Dispatchers.IO){
+        val consumeResult = withContext(Dispatchers.IO) {
             GooglePayClient.getInstance().getBillingClient().consumePurchase(consumeParams)
         }
         //google play 消耗成功
@@ -429,7 +432,7 @@ internal class OneTimeServiceImpl : OneTimeService {
     private suspend fun acknowledgePurchase(purchase: Purchase, isPay: Boolean) {
         val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
             .setPurchaseToken(purchase.purchaseToken)
-        val ackPurchaseResult = withContext(Dispatchers.IO){
+        val ackPurchaseResult = withContext(Dispatchers.IO) {
             GooglePayClient.getInstance().getBillingClient()
                 .acknowledgePurchase(acknowledgePurchaseParams.build())
         }
@@ -493,7 +496,7 @@ internal class OneTimeServiceImpl : OneTimeService {
         }
         val productDetailsParams =
             QueryProductDetailsParams.newBuilder().setProductList(inAppProductInfo).build()
-        val productDetailsResult = withContext(Dispatchers.IO){
+        val productDetailsResult = withContext(Dispatchers.IO) {
             GooglePayClient.getInstance().getBillingClient()
                 .queryProductDetails(productDetailsParams)
         }
@@ -543,7 +546,7 @@ internal class OneTimeServiceImpl : OneTimeService {
         val productDetailsList = mutableListOf<AppProductDetails>()
         val skuDetailsParams = SkuDetailsParams.newBuilder().setSkusList(productIds)
             .setType(BillingClient.ProductType.INAPP).build()
-        val skuDetailsResult = withContext(Dispatchers.IO){
+        val skuDetailsResult = withContext(Dispatchers.IO) {
             GooglePayClient.getInstance().getBillingClient()
                 .querySkuDetails(skuDetailsParams)
         }
