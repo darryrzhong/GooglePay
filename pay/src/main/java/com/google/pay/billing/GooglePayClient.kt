@@ -27,30 +27,19 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * <pre>
- *     类描述  :  app内的BillingClient
+ *     类描述  :  app内与Google支付库建立通信的client
  *
  *
  *     @author : never
- *     @since   : 2023/8/14
+ *     @since   : 2023/11/14
  * </pre>
  */
-class AppBillingClient private constructor() {
+class GooglePayClient private constructor() {
 
-    companion object {
-        const val TAG = "AppBillingClient"
-        private const val MAX_RETRY_ATTEMPT = 3
+    private val billingScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-        private var INSTANCE: AppBillingClient? = null
-
-        @JvmStatic
-        fun getInstance(): AppBillingClient = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: AppBillingClient().also { INSTANCE = it }
-        }
-    }
-
-    internal val billingScope: CoroutineScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    internal val billingMainScope: CoroutineScope =
+    internal val billingMainScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     //支付状态事件通知
@@ -310,7 +299,10 @@ class AppBillingClient private constructor() {
                 // 超过最大重试次数，停止重连
                 isReconnecting.set(false)
                 if (deBug) {
-                    appBillingService.printLog(TAG, "Google play 重连失败，已达到最大重试次数: $MAX_RETRY_ATTEMPT")
+                    appBillingService.printLog(
+                        TAG,
+                        "Google play 重连失败，已达到最大重试次数: $MAX_RETRY_ATTEMPT"
+                    )
                 }
             }
         }
@@ -354,12 +346,29 @@ class AppBillingClient private constructor() {
     fun isGoogleAvailable(context: Context? = null): Boolean {
         val resultCode = GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(context ?: applicationContext)
-        if (deBug && resultCode !=  ConnectionResult.SUCCESS) {
-            appBillingService.printLog(TAG, "resultCode : $resultCode | Google Play Services  unavailable on device")
+        if (deBug && resultCode != ConnectionResult.SUCCESS) {
+            appBillingService.printLog(
+                TAG,
+                "resultCode : $resultCode | Google Play Services  unavailable on device"
+            )
         }
         return resultCode == ConnectionResult.SUCCESS
 //        return false
     }
 
 
+    companion object {
+        const val TAG = "GooglePayClient"
+        private const val MAX_RETRY_ATTEMPT = 3
+
+        @Volatile
+        private var instance: GooglePayClient? = null
+
+        @JvmStatic
+        fun getInstance(): GooglePayClient {
+            return instance ?: synchronized(this) {
+                instance ?: GooglePayClient().also { instance = it }
+            }
+        }
+    }
 }

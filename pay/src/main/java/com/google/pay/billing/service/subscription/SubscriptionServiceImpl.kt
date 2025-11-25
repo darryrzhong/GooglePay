@@ -15,7 +15,7 @@ import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.android.billingclient.api.querySkuDetails
 import com.google.pay.AppBillingResponseCode
-import com.google.pay.billing.AppBillingClient
+import com.google.pay.billing.GooglePayClient
 import com.google.pay.handleTryEach
 import com.google.pay.model.AppBillingResult
 import com.google.pay.model.AppSubscribeDetails
@@ -27,8 +27,10 @@ import com.google.pay.model.SubsOfferParams
 import com.google.pay.model.SubscriptionMode
 import com.google.pay.utils.PayUtils
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.Closeable
 import java.util.concurrent.ConcurrentHashMap
@@ -70,31 +72,31 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                 AppBillingResponseCode.FAIL,
                 "launch fail : The corresponding $productId could not be found,subsProductDetails does not exist"
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The corresponding $productId could not be found,subsProductDetails does not exist"
                 )
             }
             return launchResult
         }
 
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             val launchResult = AppBillingResult(
                 AppBillingResponseCode.SERVICE_DISCONNECTED,
                 "launch fail : The app is not connected to the Play Store service via the Google Play Billing Library."
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The app is not connected to the Play Store service via the Google Play Billing Library."
                 )
             }
             return launchResult
         }
 
-        val isOldVersion = AppBillingClient.getInstance().isOldVersion()
+        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
         return if (isOldVersion) {
             launchBillingSku(activity, billingSubsParams)
         } else {
@@ -104,23 +106,23 @@ internal class SubscriptionServiceImpl : SubscriptionService {
 
 
     override suspend fun queryProductDetails() {
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             return
         }
         //先从app业务端拉取服务端下发的Google play 后台配置的商品列表
-        val productIds = AppBillingClient.getInstance().appBillingService.getSubscribeProducts()
+        val productIds = GooglePayClient.getInstance().appBillingService.getSubscribeProducts()
         if (productIds.isEmpty()) {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "querySubscribeProductList from app fail,productIds is empty"
                 )
 
             }
             return
         }
-        val isOldVersion = AppBillingClient.getInstance().isOldVersion()
+        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
         if (isOldVersion) {
             querySkuSubscribeProductDetails(productIds)
         } else {
@@ -130,28 +132,28 @@ internal class SubscriptionServiceImpl : SubscriptionService {
 
 
     override suspend fun queryPurchases() {
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             return
         }
         val queryPurchasesParams =
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS)
                 .build()
-        val purchasesResult = AppBillingClient.getInstance().getBillingClient().queryPurchasesAsync(
+        val purchasesResult = GooglePayClient.getInstance().getBillingClient().queryPurchasesAsync(
             queryPurchasesParams
         )
         if (purchasesResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             val purchases = purchasesResult.purchasesList
             handlePurchases(purchases, false)
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Get a list of unconsumed (subs) transactions for Google payments $purchases"
                 )
             }
         } else {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "fail code : ${purchasesResult.billingResult.responseCode} | message : ${purchasesResult.billingResult.debugMessage}"
             )
         }
@@ -187,7 +189,7 @@ internal class SubscriptionServiceImpl : SubscriptionService {
             return
         }
         unAckPurchases.forEach { purchase ->
-            AppBillingClient.getInstance().appBillingService.handlePurchasesProcess(
+            GooglePayClient.getInstance().appBillingService.handlePurchasesProcess(
                 isPay,
                 BillingProductType.SUBS,
                 purchase
@@ -208,13 +210,15 @@ internal class SubscriptionServiceImpl : SubscriptionService {
         //去Google play 消耗掉订单
         val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
             .setPurchaseToken(purchase.purchaseToken).build()
-        val ackPurchaseResult = AppBillingClient.getInstance().getBillingClient()
-            .acknowledgePurchase(acknowledgePurchaseParams)
+        val ackPurchaseResult = withContext(Dispatchers.IO) {
+            GooglePayClient.getInstance().getBillingClient()
+                .acknowledgePurchase(acknowledgePurchaseParams)
+        }
         //google play 消耗成功
         if (ackPurchaseResult.responseCode == BillingClient.BillingResponseCode.OK) {
             if (isPay) {
                 //用户支付场景,需要去刷新一下金币余额等UI操作
-                AppBillingClient.getInstance().appBillingPayEventFlow.emit(
+                GooglePayClient.getInstance().appBillingPayEventFlow.emit(
                     BillingPayEvent.PayConsumeSuccessful(
                         purchase
                     )
@@ -223,9 +227,9 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                 purchase.products.forEach { productId ->
                     ackSubscribePurchasesMap[productId] = purchase
                 }
-                if (AppBillingClient.getInstance().deBug) {
-                    AppBillingClient.getInstance().appBillingService.printLog(
-                        AppBillingClient.TAG,
+                if (GooglePayClient.getInstance().deBug) {
+                    GooglePayClient.getInstance().appBillingService.printLog(
+                        GooglePayClient.TAG,
                         "Google play payments and consumption (subs) success ${purchase.originalJson}"
                     )
                 }
@@ -233,7 +237,7 @@ internal class SubscriptionServiceImpl : SubscriptionService {
         } else {
             //google play 消耗失败
             if (isPay) {
-                AppBillingClient.getInstance().appBillingPayEventFlow.emit(
+                GooglePayClient.getInstance().appBillingPayEventFlow.emit(
                     BillingPayEvent.PayConsumeFailed(
                         purchase,
                         ackPurchaseResult.responseCode,
@@ -241,16 +245,16 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                     )
                 )
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Google play payments and consumption (subs) fail ${purchase.originalJson}"
                 )
             }
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "Google play payments and consumption (subs) : code : ${ackPurchaseResult.responseCode} | message : ${ackPurchaseResult.debugMessage}"
             )
         }
@@ -261,12 +265,12 @@ internal class SubscriptionServiceImpl : SubscriptionService {
         scope: CoroutineScope,
         onEvent: (BillingPayEvent) -> Unit
     ): Job {
-        return AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+        return GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
             onEvent.invoke(event)
         }, catch = {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "observePayEvent catch: ${it.message}"
                 )
             }
@@ -275,11 +279,11 @@ internal class SubscriptionServiceImpl : SubscriptionService {
 
     override fun observePayEventJava(callback: Consumer<BillingPayEvent>): Closeable {
         val job =
-            AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+            GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
                 callback.accept(event)
             }, catch = {
 
-            }).launchIn(AppBillingClient.getInstance().billingMainScope)
+            }).launchIn(GooglePayClient.getInstance().billingMainScope)
 
         return Closeable { job.cancel() }
     }
@@ -299,9 +303,9 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                 AppBillingResponseCode.FAIL,
                 "launch fail : The corresponding ${billingSubsParams.productId} could not be found,googleSubProductDetails does not exist"
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The corresponding ${billingSubsParams.productId} could not be found,googleSubProductDetails does not exist"
                 )
             }
@@ -314,16 +318,16 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                     AppBillingResponseCode.FAIL,
                     "billingFlowParams is null"
                 )
-        val billingResult = AppBillingClient.getInstance().getBillingClient()
+        val billingResult = GooglePayClient.getInstance().getBillingClient()
             .launchBillingFlow(activity, billingFlowParams)
         val launchResult = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             AppBillingResult(AppBillingResponseCode.OK, billingSubsParams.chargeNo)
         } else {
             AppBillingResult(AppBillingResponseCode.FAIL, billingResult.debugMessage)
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "launchBillingFlow  : code : ${billingResult.responseCode} | message : ${billingResult.debugMessage}"
             )
         }
@@ -345,9 +349,9 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                 AppBillingResponseCode.FAIL,
                 "launch fail : The corresponding ${billingSubsParams.productId} could not be found,googleSubSkuDetails does not exist"
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The corresponding ${billingSubsParams.productId} could not be found,googleSubSkuDetails does not exist"
                 )
             }
@@ -360,22 +364,21 @@ internal class SubscriptionServiceImpl : SubscriptionService {
             .setObfuscatedAccountId(billingSubsParams.accountId)
             .setObfuscatedProfileId(jsonObject.toString()).build()
 
-        val billingResult = AppBillingClient.getInstance().getBillingClient()
+        val billingResult = GooglePayClient.getInstance().getBillingClient()
             .launchBillingFlow(activity, billingFlowParams)
         val launchResult = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             AppBillingResult(AppBillingResponseCode.OK, billingSubsParams.chargeNo)
         } else {
             AppBillingResult(AppBillingResponseCode.FAIL, billingResult.debugMessage)
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "launchBillingFlow  : code : ${billingResult.responseCode} | message : ${billingResult.debugMessage}"
             )
         }
         return launchResult
     }
-
 
 
     /**
@@ -394,10 +397,12 @@ internal class SubscriptionServiceImpl : SubscriptionService {
         }
         val productDetailsParams =
             QueryProductDetailsParams.newBuilder().setProductList(inAppProductInfo).build()
-        val productDetailsResult =
-            AppBillingClient.getInstance().getBillingClient().queryProductDetails(
+        val productDetailsResult = withContext(Dispatchers.IO) {
+            GooglePayClient.getInstance().getBillingClient().queryProductDetails(
                 productDetailsParams
             )
+        }
+
         if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             val productDetails = productDetailsResult.productDetailsList
             productDetails?.forEach { productDetail ->
@@ -410,16 +415,16 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                     googleSubscribeDetailsMap[productDetail.productId] = productDetail
                 }
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Get a list of subscribeProduct (subs) details configured by Google Play----> |productDetails : $productDetails"
                 )
             }
         } else {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "fail code : ${productDetailsResult.billingResult.responseCode} | message : ${productDetailsResult.billingResult.debugMessage}"
                 )
             }
@@ -436,8 +441,10 @@ internal class SubscriptionServiceImpl : SubscriptionService {
     ) {
         val skuDetailsParams = SkuDetailsParams.newBuilder().setSkusList(productIds)
             .setType(BillingClient.ProductType.SUBS).build()
-        val skuDetailsResult = AppBillingClient.getInstance().getBillingClient()
-            .querySkuDetails(skuDetailsParams)
+        val skuDetailsResult = withContext(Dispatchers.IO) {
+            GooglePayClient.getInstance().getBillingClient()
+                .querySkuDetails(skuDetailsParams)
+        }
         if (skuDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             val skuDetails = skuDetailsResult.skuDetailsList
             skuDetails?.let {
@@ -448,17 +455,17 @@ internal class SubscriptionServiceImpl : SubscriptionService {
                     )
                     googleSkuSubscribeDetailsMap[skuDetail.sku] = skuDetail
                 }
-                if (AppBillingClient.getInstance().deBug) {
-                    AppBillingClient.getInstance().appBillingService.printLog(
-                        AppBillingClient.TAG,
+                if (GooglePayClient.getInstance().deBug) {
+                    GooglePayClient.getInstance().appBillingService.printLog(
+                        GooglePayClient.TAG,
                         "Get a list of skuSubscribeProduct (subs) details configured by Google Play----> |skuDetails : $skuDetails"
                     )
                 }
             }
         } else {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "fail code : ${skuDetailsResult.billingResult.responseCode} | message : ${skuDetailsResult.billingResult.debugMessage}"
                 )
             }
@@ -467,7 +474,7 @@ internal class SubscriptionServiceImpl : SubscriptionService {
 
 
     override fun querySubsOfferDetails(subsOfferParams: SubsOfferParams): AppSubscribeDetails? {
-        val isOldVersion = AppBillingClient.getInstance().isOldVersion()
+        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
         //兼容4.0老版本
         if (isOldVersion) {
             val skuDetails = googleSkuSubscribeDetailsMap[subsOfferParams.productId] ?: return null
@@ -520,7 +527,6 @@ internal class SubscriptionServiceImpl : SubscriptionService {
         }
         return purchaseMap
     }
-
 
 
     /**
@@ -613,7 +619,7 @@ internal class SubscriptionServiceImpl : SubscriptionService {
     ): BillingFlowParams? {
         var cruAckSubscribe: Purchase? = null
         //单订阅模式,直接将当前订阅替换成目标订阅
-        if (AppBillingClient.getInstance().subscriptionMode == SubscriptionMode.SingleMode) {
+        if (GooglePayClient.getInstance().subscriptionMode == SubscriptionMode.SingleMode) {
             //当前本地存在Google查询的有效订阅
             if (ackSubscribePurchasesMap.isNotEmpty()) {
                 val purchaseToken = ackSubscribePurchasesMap.values.toMutableList()[0].purchaseToken

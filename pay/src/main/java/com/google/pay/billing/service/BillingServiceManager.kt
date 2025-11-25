@@ -1,6 +1,6 @@
 package com.google.pay.billing.service
 
-import com.google.pay.billing.AppBillingClient
+import com.google.pay.billing.GooglePayClient
 import com.google.pay.billing.service.onetime.OneTimeService
 import com.google.pay.billing.service.onetime.OneTimeServiceEmptyImpl
 import com.google.pay.billing.service.onetime.OneTimeServiceImpl
@@ -40,8 +40,6 @@ internal object BillingServiceManager {
 
         servicesEmpty[OneTimeService::class.java.simpleName] = oneTimeServiceEmptyImpl
         servicesEmpty[SubscriptionService::class.java.simpleName] = subscriptionServiceEmptyImpl
-
-
     }
 
     /**
@@ -57,7 +55,7 @@ internal object BillingServiceManager {
             if (!servicesMap.containsKey(serviceName)) {
                 throw IllegalArgumentException("The $clazzName service does not exist")
             }
-            if (AppBillingClient.getInstance().isGoogleAvailable()) {
+            if (GooglePayClient.getInstance().isGoogleAvailable()) {
                 if (services.containsKey(serviceName)) {
                     return services[serviceName] as T
                 }

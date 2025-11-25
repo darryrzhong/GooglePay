@@ -5,7 +5,7 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.google.pay.billing.AppBillingClient
+import com.google.pay.billing.GooglePayClient
 import com.google.pay.model.BillingPayEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
@@ -55,12 +55,12 @@ fun <T> Flow<T>.handleTryEach(
  * @param onEvent 事件
  * */
 fun ComponentActivity.observePayEvent(onEvent: (BillingPayEvent) -> Unit) {
-    AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+    GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
         onEvent.invoke(event)
     }, catch = {
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "observePayEvent catch: ${it.message}"
             )
         }
@@ -72,12 +72,12 @@ fun ComponentActivity.observePayEvent(onEvent: (BillingPayEvent) -> Unit) {
  * @param onEvent 事件
  * */
 fun Fragment.observePayEvent(onEvent: (BillingPayEvent) -> Unit) {
-    AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+    GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
         onEvent.invoke(event)
     }, catch = {
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "observePayEvent catch: ${it.message}"
             )
         }
@@ -90,12 +90,12 @@ fun Fragment.observePayEvent(onEvent: (BillingPayEvent) -> Unit) {
  * @param onEvent 事件
  * */
 fun Fragment.observePayViewEvent(onEvent: (BillingPayEvent) -> Unit) {
-    AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+    GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
         onEvent.invoke(event)
     }, catch = {
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "observePayEvent catch: ${it.message}"
             )
         }
@@ -109,16 +109,16 @@ fun Fragment.observePayViewEvent(onEvent: (BillingPayEvent) -> Unit) {
  * */
 fun Dialog.observePayEvent(onEvent: (BillingPayEvent) -> Unit) {
     val job =
-        AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+        GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
             onEvent.invoke(event)
         }, catch = {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "observePayEvent catch: ${it.message}"
                 )
             }
-        }).launchIn(AppBillingClient.getInstance().billingMainScope)
+        }).launchIn(GooglePayClient.getInstance().billingMainScope)
     this.setOnDismissListener {
         job.cancel()
     }
@@ -132,15 +132,15 @@ fun Dialog.observePayEvent(onEvent: (BillingPayEvent) -> Unit) {
  * */
 fun Any.observePayEvent(onEvent: (BillingPayEvent) -> Unit): Job {
     val job =
-        AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+        GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
             onEvent.invoke(event)
         }, catch = {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "observePayEvent catch: ${it.message}"
                 )
             }
-        }).launchIn(AppBillingClient.getInstance().billingMainScope)
+        }).launchIn(GooglePayClient.getInstance().billingMainScope)
     return job
 }

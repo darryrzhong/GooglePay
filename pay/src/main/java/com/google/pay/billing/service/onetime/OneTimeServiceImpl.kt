@@ -17,7 +17,7 @@ import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.android.billingclient.api.querySkuDetails
 import com.google.pay.AppBillingResponseCode
-import com.google.pay.billing.AppBillingClient
+import com.google.pay.billing.GooglePayClient
 import com.google.pay.handleTryEach
 import com.google.pay.model.AppBillingResult
 import com.google.pay.model.AppProductDetails
@@ -26,8 +26,10 @@ import com.google.pay.model.BillingPayEvent
 import com.google.pay.model.BillingProductType
 import com.google.pay.utils.PayUtils
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.Closeable
 import java.util.concurrent.ConcurrentHashMap
@@ -68,29 +70,29 @@ internal class OneTimeServiceImpl : OneTimeService {
                 AppBillingResponseCode.FAIL,
                 "launch fail : The corresponding $productId could not be found,productDetails does not exist"
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The corresponding $productId could not be found,productDetails does not exist"
                 )
             }
             return launchResult
         }
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             val launchResult = AppBillingResult(
                 AppBillingResponseCode.SERVICE_DISCONNECTED,
                 "launch fail : The app is not connected to the Play Store service via the Google Play Billing Library."
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The app is not connected to the Play Store service via the Google Play Billing Library."
                 )
             }
             return launchResult
         }
-        val isOldVersion = AppBillingClient.getInstance().isOldVersion()
+        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
         return if (isOldVersion) {
             launchBillingSku(activity, billingParams)
         } else {
@@ -100,22 +102,22 @@ internal class OneTimeServiceImpl : OneTimeService {
 
 
     override suspend fun queryProductDetails() {
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             return
         }
         //1.先从app业务端拉取服务端下发的Google play 后台配置的商品列表
         //消耗商品
         val consumableProductIds =
-            AppBillingClient.getInstance().appBillingService.getOneTimeConsumableProducts()
+            GooglePayClient.getInstance().appBillingService.getOneTimeConsumableProducts()
         //非消耗商品
         val noConsumableProductIds =
-            AppBillingClient.getInstance().appBillingService.getOneTimeConsumableProducts()
+            GooglePayClient.getInstance().appBillingService.getOneTimeConsumableProducts()
         val productIds = consumableProductIds + noConsumableProductIds
         if (productIds.isEmpty()) {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "queryProductList from app fail,productIds is empty"
                 )
             }
@@ -125,7 +127,7 @@ internal class OneTimeServiceImpl : OneTimeService {
             _noConsumableProductIds.clear()
             _noConsumableProductIds.addAll(noConsumableProductIds)
         }
-        val isOldVersion = AppBillingClient.getInstance().isOldVersion()
+        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
         if (isOldVersion) {
             querySkuDetailsList(productIds)
         } else {
@@ -148,12 +150,12 @@ internal class OneTimeServiceImpl : OneTimeService {
             return localDetails
         }
 
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             return localDetails
         }
         //2. 去google play 查询
-        val isOldVersion = AppBillingClient.getInstance().isOldVersion()
+        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
         return if (isOldVersion) {
             querySkuDetailsList(productIds)
         } else {
@@ -163,28 +165,28 @@ internal class OneTimeServiceImpl : OneTimeService {
 
 
     override suspend fun queryPurchases() {
-        val state = AppBillingClient.getInstance().checkClientState()
+        val state = GooglePayClient.getInstance().checkClientState()
         if (!state) {
             return
         }
         val queryPurchasesParams =
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP)
                 .build()
-        val purchasesResult = AppBillingClient.getInstance().getBillingClient()
+        val purchasesResult = GooglePayClient.getInstance().getBillingClient()
             .queryPurchasesAsync(queryPurchasesParams)
 
         if (purchasesResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             val purchases = purchasesResult.purchasesList
             handlePurchases(purchases, false)
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Get a list of unconsumed (inapp) transactions for Google payments $purchases"
                 )
             }
         } else {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "fail code : ${purchasesResult.billingResult.responseCode} | message : ${purchasesResult.billingResult.debugMessage}"
             )
         }
@@ -216,7 +218,7 @@ internal class OneTimeServiceImpl : OneTimeService {
         }
         //处理购买交易
         purchasesList.forEach { purchase ->
-            AppBillingClient.getInstance().appBillingService.handlePurchasesProcess(
+            GooglePayClient.getInstance().appBillingService.handlePurchasesProcess(
                 isPay,
                 BillingProductType.INAPP, purchase
             )
@@ -247,28 +249,29 @@ internal class OneTimeServiceImpl : OneTimeService {
         val consumeParams =
             ConsumeParams.newBuilder().setPurchaseToken(purchase.purchaseToken)
                 .build()
-        val consumeResult =
-            AppBillingClient.getInstance().getBillingClient().consumePurchase(consumeParams)
+        val consumeResult =withContext(Dispatchers.IO){
+            GooglePayClient.getInstance().getBillingClient().consumePurchase(consumeParams)
+        }
         //google play 消耗成功
         if (consumeResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             if (isPay) {
                 //用户支付场景,需要去刷新一下金币余额等UI操作
-                AppBillingClient.getInstance().appBillingPayEventFlow.emit(
+                GooglePayClient.getInstance().appBillingPayEventFlow.emit(
                     BillingPayEvent.PayConsumeSuccessful(
                         purchase
                     )
                 )
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Google play payments and consumption success ${purchase.originalJson}"
                 )
             }
         } else {
             //google play 消耗失败
             if (isPay) {
-                AppBillingClient.getInstance().appBillingPayEventFlow.emit(
+                GooglePayClient.getInstance().appBillingPayEventFlow.emit(
                     BillingPayEvent.PayConsumeFailed(
                         purchase,
                         consumeResult.billingResult.responseCode,
@@ -276,16 +279,16 @@ internal class OneTimeServiceImpl : OneTimeService {
                     )
                 )
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Google play payments and consumption fail ${purchase.originalJson}"
                 )
             }
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "Google play payments and consumption : code : ${consumeResult.billingResult.responseCode} | message : ${consumeResult.billingResult.debugMessage}"
             )
         }
@@ -296,12 +299,12 @@ internal class OneTimeServiceImpl : OneTimeService {
         scope: CoroutineScope,
         onEvent: (BillingPayEvent) -> Unit
     ): Job {
-        return AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+        return GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
             onEvent.invoke(event)
         }, catch = {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "observePayEvent catch: ${it.message}"
                 )
             }
@@ -312,11 +315,11 @@ internal class OneTimeServiceImpl : OneTimeService {
 
     override fun observePayEventJava(callback: Consumer<BillingPayEvent>): Closeable {
         val job =
-            AppBillingClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
+            GooglePayClient.getInstance().appBillingPayEventFlow.handleTryEach(action = { event ->
                 callback.accept(event)
             }, catch = {
 
-            }).launchIn(AppBillingClient.getInstance().billingMainScope)
+            }).launchIn(GooglePayClient.getInstance().billingMainScope)
 
         return Closeable { job.cancel() }
     }
@@ -336,9 +339,9 @@ internal class OneTimeServiceImpl : OneTimeService {
                 AppBillingResponseCode.FAIL,
                 "launch fail : The corresponding ${billingParams.productId} could not be found,googleSkuDetails does not exist"
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The corresponding ${billingParams.productId} could not be found,googleSkuDetails does not exist"
                 )
             }
@@ -351,7 +354,7 @@ internal class OneTimeServiceImpl : OneTimeService {
             .setObfuscatedAccountId(billingParams.accountId)
             .setObfuscatedProfileId(jsonObject.toString()).build()
 
-        val billingResult = AppBillingClient.getInstance().getBillingClient()
+        val billingResult = GooglePayClient.getInstance().getBillingClient()
             .launchBillingFlow(activity, billingFlowParams)
         val launchResult = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             AppBillingResult(AppBillingResponseCode.OK, billingParams.chargeNo)
@@ -361,9 +364,9 @@ internal class OneTimeServiceImpl : OneTimeService {
                 billingResult.debugMessage
             )
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "launchBillingFlow  : code : ${billingResult.responseCode} | message : ${billingResult.debugMessage}"
             )
         }
@@ -385,9 +388,9 @@ internal class OneTimeServiceImpl : OneTimeService {
                 AppBillingResponseCode.FAIL,
                 "launch fail : The corresponding ${billingParams.productId} could not be found,googleProductDetails does not exist"
             )
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "launch fail : The corresponding ${billingParams.productId} could not be found,googleProductDetails does not exist"
                 )
             }
@@ -405,16 +408,16 @@ internal class OneTimeServiceImpl : OneTimeService {
             BillingFlowParams.newBuilder().setProductDetailsParamsList(productDetailsParamsList)
                 .setObfuscatedAccountId(billingParams.accountId)
                 .setObfuscatedProfileId(jsonObject.toString()).build()
-        val billingResult = AppBillingClient.getInstance().getBillingClient()
+        val billingResult = GooglePayClient.getInstance().getBillingClient()
             .launchBillingFlow(activity, billingFlowParams)
         val launchResult = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             AppBillingResult(AppBillingResponseCode.OK, billingParams.chargeNo)
         } else {
             AppBillingResult(billingResult.responseCode, billingResult.debugMessage)
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "launchBillingFlow  : code : ${billingResult.responseCode} | message : ${billingResult.debugMessage}"
             )
         }
@@ -430,28 +433,30 @@ internal class OneTimeServiceImpl : OneTimeService {
     private suspend fun acknowledgePurchase(purchase: Purchase, isPay: Boolean) {
         val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
             .setPurchaseToken(purchase.purchaseToken)
-        val ackPurchaseResult = AppBillingClient.getInstance().getBillingClient()
-            .acknowledgePurchase(acknowledgePurchaseParams.build())
+        val ackPurchaseResult = withContext(Dispatchers.IO){
+            GooglePayClient.getInstance().getBillingClient()
+                .acknowledgePurchase(acknowledgePurchaseParams.build())
+        }
         //google play 确认成功
         if (ackPurchaseResult.responseCode == BillingClient.BillingResponseCode.OK) {
             if (isPay) {
                 //用户支付场景,需要去刷新一下金币余额等UI操作
-                AppBillingClient.getInstance().appBillingPayEventFlow.emit(
+                GooglePayClient.getInstance().appBillingPayEventFlow.emit(
                     BillingPayEvent.PayConsumeSuccessful(
                         purchase
                     )
                 )
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Google play payments and acknowledge success ${purchase.originalJson}"
                 )
             }
         } else {
             //google play 确认失败
             if (isPay) {
-                AppBillingClient.getInstance().appBillingPayEventFlow.emit(
+                GooglePayClient.getInstance().appBillingPayEventFlow.emit(
                     BillingPayEvent.PayConsumeFailed(
                         purchase,
                         ackPurchaseResult.responseCode,
@@ -459,16 +464,16 @@ internal class OneTimeServiceImpl : OneTimeService {
                     )
                 )
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Google play payments and acknowledge fail ${purchase.originalJson}"
                 )
             }
         }
-        if (AppBillingClient.getInstance().deBug) {
-            AppBillingClient.getInstance().appBillingService.printLog(
-                AppBillingClient.TAG,
+        if (GooglePayClient.getInstance().deBug) {
+            GooglePayClient.getInstance().appBillingService.printLog(
+                GooglePayClient.TAG,
                 "Google play payments and acknowledge : code : ${ackPurchaseResult.responseCode} | message : ${ackPurchaseResult.debugMessage}"
             )
         }
@@ -492,8 +497,10 @@ internal class OneTimeServiceImpl : OneTimeService {
         }
         val productDetailsParams =
             QueryProductDetailsParams.newBuilder().setProductList(inAppProductInfo).build()
-        val productDetailsResult = AppBillingClient.getInstance().getBillingClient()
-            .queryProductDetails(productDetailsParams)
+        val productDetailsResult = withContext(Dispatchers.IO){
+            GooglePayClient.getInstance().getBillingClient()
+                .queryProductDetails(productDetailsParams)
+        }
         if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             val productDetails = productDetailsResult.productDetailsList
             productDetails?.forEach { productDetail ->
@@ -510,17 +517,17 @@ internal class OneTimeServiceImpl : OneTimeService {
                     productDetailsList.add(appProductDetails)
                 }
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Get a list of product (inapp) details configured by Google Play----> |productDetails : $productDetails"
                 )
             }
             return productDetailsList
         } else {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "fail code : ${productDetailsResult.billingResult.responseCode} | message : ${productDetailsResult.billingResult.debugMessage}"
                 )
             }
@@ -540,8 +547,10 @@ internal class OneTimeServiceImpl : OneTimeService {
         val productDetailsList = mutableListOf<AppProductDetails>()
         val skuDetailsParams = SkuDetailsParams.newBuilder().setSkusList(productIds)
             .setType(BillingClient.ProductType.INAPP).build()
-        val skuDetailsResult = AppBillingClient.getInstance().getBillingClient()
-            .querySkuDetails(skuDetailsParams)
+        val skuDetailsResult = withContext(Dispatchers.IO){
+            GooglePayClient.getInstance().getBillingClient()
+                .querySkuDetails(skuDetailsParams)
+        }
         if (skuDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             val skuDetails = skuDetailsResult.skuDetailsList
             skuDetails?.let {
@@ -558,17 +567,17 @@ internal class OneTimeServiceImpl : OneTimeService {
                     productDetailsList.add(appProductDetails)
                 }
             }
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "Get a list of sku (inapp) details configured by Google Play----> |skuDetails : $skuDetails"
                 )
             }
             return productDetailsList
         } else {
-            if (AppBillingClient.getInstance().deBug) {
-                AppBillingClient.getInstance().appBillingService.printLog(
-                    AppBillingClient.TAG,
+            if (GooglePayClient.getInstance().deBug) {
+                GooglePayClient.getInstance().appBillingService.printLog(
+                    GooglePayClient.TAG,
                     "fail code : ${skuDetailsResult.billingResult.responseCode} | message : ${skuDetailsResult.billingResult.debugMessage}"
                 )
             }

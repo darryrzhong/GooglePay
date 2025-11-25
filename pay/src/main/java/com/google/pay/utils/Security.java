@@ -28,7 +28,7 @@ import android.util.Base64;
 import android.util.Log;
 
 
-import com.google.pay.billing.AppBillingClient;
+import com.google.pay.billing.GooglePayClient;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -56,7 +56,7 @@ public class Security {
      * your local.properties, it will be echoed into BuildConfig.
      */
 
-    final private static String BASE_64_ENCODED_PUBLIC_KEY = AppBillingClient.getInstance().getGooglePayId();
+    final private static String BASE_64_ENCODED_PUBLIC_KEY = GooglePayClient.getInstance().getGooglePayId();
 
     /**
      * Verifies that the data was signed with the given signature
@@ -69,7 +69,7 @@ public class Security {
                 || TextUtils.isEmpty(signature))
         ) {
             Log.w(TAG, "Purchase verification failed: missing data.");
-            AppBillingClient.getInstance().appBillingService.printLog(AppBillingClient.TAG, "Purchase verification failed: missing data.");
+            GooglePayClient.getInstance().appBillingService.printLog(GooglePayClient.TAG, "Purchase verification failed: missing data.");
 
             return false;
         }
@@ -78,7 +78,7 @@ public class Security {
             return verify(key, signedData, signature);
         } catch (IOException e) {
             Log.d(TAG, "Error generating PublicKey from encoded key: " + e.getMessage());
-            AppBillingClient.getInstance().appBillingService.printLog(AppBillingClient.TAG, "Error generating PublicKey from encoded key: " + e.getMessage());
+            GooglePayClient.getInstance().appBillingService.printLog(GooglePayClient.TAG, "Error generating PublicKey from encoded key: " + e.getMessage());
 
             return false;
         }

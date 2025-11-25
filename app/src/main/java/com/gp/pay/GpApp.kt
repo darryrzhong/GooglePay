@@ -1,7 +1,7 @@
 package com.gp.pay
 
 import android.app.Application
-import com.google.pay.billing.AppBillingClient
+import com.google.pay.billing.GooglePayClient
 import com.google.pay.model.SubscriptionMode
 
 /**
@@ -16,7 +16,7 @@ class GpApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        AppBillingClient.getInstance()
+        GooglePayClient.getInstance()
             .setDebug(true)
             .setSubscriptionMode(SubscriptionMode.SingleMode)
             .setSubscription(true)
