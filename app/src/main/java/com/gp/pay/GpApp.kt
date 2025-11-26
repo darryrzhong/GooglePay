@@ -21,6 +21,6 @@ class GpApp : Application() {
             .setDebug(true)
             .setSubscriptionMode(SubscriptionMode.SingleMode)
             .setSubscription(true)
-            .initBillingClient(this, AppBillingServiceImpl.instance)
+            .initBillingClient(this, GooglePayServiceImpl.instance)
     }
 }

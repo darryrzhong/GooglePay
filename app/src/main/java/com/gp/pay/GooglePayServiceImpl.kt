@@ -13,10 +13,10 @@ import com.google.pay.model.BillingProductType
  *     @since  : 2025/11/24
  * </pre>
  */
-class AppBillingServiceImpl private constructor() : GooglePayService {
+class GooglePayServiceImpl private constructor() : GooglePayService {
 
     companion object {
-        val instance by lazy { AppBillingServiceImpl() }
+        val instance by lazy { GooglePayServiceImpl() }
     }
 
     override suspend fun getOneTimeConsumableProducts(): List<String> {

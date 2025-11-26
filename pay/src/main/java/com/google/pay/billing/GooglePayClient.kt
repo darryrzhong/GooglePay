@@ -1,5 +1,7 @@
 package com.google.pay.billing
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.util.Log
 import com.android.billingclient.api.BillingClient
@@ -15,6 +17,7 @@ import com.google.pay.billing.service.BillingServiceManager
 import com.google.pay.billing.service.BillingServiceManager.getService
 import com.google.pay.billing.service.onetime.OneTimeService
 import com.google.pay.billing.service.subscription.SubscriptionService
+import com.google.pay.lifecyc.ActivityLifecycleCallback
 import com.google.pay.model.BillingPayEvent
 import com.google.pay.model.SubscriptionMode
 import kotlinx.coroutines.CoroutineScope
@@ -66,6 +69,7 @@ class GooglePayClient private constructor() {
 
     private lateinit var applicationContext: Context
 
+    private val activityLifecycleCallback = ActivityLifecycleCallback()
 
     internal lateinit var appBillingService: GooglePayService
 
@@ -233,14 +237,22 @@ class GooglePayClient private constructor() {
     }
 
 
-    fun initBillingClient(context: Context, appBillingService: GooglePayService) = apply {
+    fun initBillingClient(context: Application, appBillingService: GooglePayService) = apply {
         applicationContext = context
         this.appBillingService = appBillingService
+        context.registerActivityLifecycleCallbacks(activityLifecycleCallback)
     }
-
 
     fun setDebug(isDebug: Boolean) = apply {
         deBug = isDebug
+    }
+
+    fun setInterval(interval: Int) = apply {
+        activityLifecycleCallback.refreshInterval = interval
+    }
+
+    fun registerActivitys(activitys: List<Class<out Activity>>) = apply {
+        activityLifecycleCallback.activityList.addAll(activitys)
     }
 
     fun setSubscription(isSubscription: Boolean) = apply {
