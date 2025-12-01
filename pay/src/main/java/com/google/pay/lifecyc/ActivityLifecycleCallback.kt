@@ -45,7 +45,7 @@ internal class ActivityLifecycleCallback : Application.ActivityLifecycleCallback
             if (now - lastTime > refreshInterval * 1000) {
                 //内部刷新Google pay相关状态
                 lastTime = now
-                GooglePayClient.getInstance().startConnection()
+                GooglePayClient.getInstance().queryPurchases()
             }
         }
     }
@@ -67,7 +67,12 @@ internal class ActivityLifecycleCallback : Application.ActivityLifecycleCallback
 
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
-        GooglePayClient.getInstance().startConnection()
+        val now = System.currentTimeMillis()
+        if (now - lastTime > 2000) {
+            lastTime = now
+            GooglePayClient.getInstance().refreshPurchases()
+        }
+
     }
 
 

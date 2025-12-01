@@ -167,7 +167,7 @@ class GooglePayClient private constructor() {
     }
 
 
-    private fun queryPurchases() {
+    fun queryPurchases() {
         billingScope.launch {
             //1. 刷新一下真实配置列表
             getService<OneTimeService>().queryProductDetails()
@@ -235,22 +235,8 @@ class GooglePayClient private constructor() {
         }
     }
 
-    /**
-     * 建立google play 连接
-     * */
-    fun startConnection() {
-        if (!isGoogleAvailable()) {
-            return
-        }
-        //已经连接,刷新一下配置
-        if (billingClient.isReady) {
-            //去刷新一下库存消耗
-            queryPurchases()
-            return
-        }
-    }
 
-    private fun refreshPurchases() {
+    fun refreshPurchases() {
         billingScope.launch {
             getService<OneTimeService>().queryPurchases()
             if (subscription) {
