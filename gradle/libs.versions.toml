@@ -15,6 +15,8 @@ navigationFragmentKtx = "2.9.6"
 navigationUiKtx = "2.9.6"
 gms = "18.5.0"
 billing = "8.1.0"
+googlePay = "v8.1.0-1.0"
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +34,7 @@ androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation
 play-services = { group = "com.google.android.gms", name = "play-services-base", version.ref = "gms" }
 billing-client = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 billing-client-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
+google-pay = {group = "com.github.darryrzhong", name = "GooglePay", version.ref = "googlePay" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
