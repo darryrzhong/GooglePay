@@ -8,12 +8,9 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import com.android.billingclient.api.SkuDetails
-import com.android.billingclient.api.SkuDetailsParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
-import com.android.billingclient.api.querySkuDetails
 import com.google.pay.AppBillingResponseCode
 import com.google.pay.billing.GooglePayClient
 import com.google.pay.handleTryEach
@@ -50,7 +47,6 @@ internal class SubscriptionServiceImpl : SubscriptionService {
     //google play商品详情列表
     private val subscribeDetailsMap = ConcurrentHashMap<String, AppSubscribeDetails>()
     private val googleSubscribeDetailsMap = ConcurrentHashMap<String, ProductDetails>()
-    private val googleSkuSubscribeDetailsMap = ConcurrentHashMap<String, SkuDetails>()
 
 
     //当前已经确认有效的订阅列表，购买订阅之前需要根据这个列表来判断订阅的类型
@@ -96,12 +92,7 @@ internal class SubscriptionServiceImpl : SubscriptionService {
             return launchResult
         }
 
-        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
-        return if (isOldVersion) {
-            launchBillingSku(activity, billingSubsParams)
-        } else {
-            launchBilling(activity, billingSubsParams)
-        }
+        return   launchBilling(activity, billingSubsParams)
     }
 
 
@@ -124,12 +115,7 @@ internal class SubscriptionServiceImpl : SubscriptionService {
             }
             return
         }
-        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
-        if (isOldVersion) {
-            querySkuSubscribeProductDetails(productIds)
-        } else {
-            querySubscribeProductDetails(productIds)
-        }
+        querySubscribeProductDetails(productIds)
     }
 
 
@@ -333,51 +319,6 @@ internal class SubscriptionServiceImpl : SubscriptionService {
     }
 
 
-    /**
-     * 启动google pay
-     * */
-    private fun launchBillingSku(
-        activity: Activity,
-        billingSubsParams: BillingSubsParams
-    ): AppBillingResult {
-        val productId = billingSubsParams.productId
-        val skuDetails = googleSkuSubscribeDetailsMap[productId]
-        if (skuDetails == null) {
-            val launchResult = AppBillingResult(
-                AppBillingResponseCode.FAIL,
-                "launch fail : The corresponding ${billingSubsParams.productId} could not be found,googleSubSkuDetails does not exist"
-            )
-            if (GooglePayClient.getInstance().deBug) {
-                GooglePayClient.getInstance().appBillingService.printLog(
-                    GooglePayClient.TAG,
-                    "launch fail : The corresponding ${billingSubsParams.productId} could not be found,googleSubSkuDetails does not exist"
-                )
-            }
-            return launchResult
-        }
-        val jsonObject = JSONObject()
-        jsonObject.put("subscription_no", billingSubsParams.chargeNo)
-        jsonObject.put("sku_type", BillingClient.ProductType.SUBS)
-        val billingFlowParams = BillingFlowParams.newBuilder().setSkuDetails(skuDetails!!)
-            .setObfuscatedAccountId(billingSubsParams.accountId)
-            .setObfuscatedProfileId(jsonObject.toString()).build()
-
-        val billingResult = GooglePayClient.getInstance().getBillingClient()
-            .launchBillingFlow(activity, billingFlowParams)
-        val launchResult = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-            AppBillingResult(AppBillingResponseCode.OK, billingSubsParams.chargeNo)
-        } else {
-            AppBillingResult(AppBillingResponseCode.FAIL, billingResult.debugMessage)
-        }
-        if (GooglePayClient.getInstance().deBug) {
-            GooglePayClient.getInstance().appBillingService.printLog(
-                GooglePayClient.TAG,
-                "launchBillingFlow  : code : ${billingResult.responseCode} | message : ${billingResult.debugMessage}"
-            )
-        }
-        return launchResult
-    }
-
 
     /**
      * Google Play 结算库版本 5.0+
@@ -429,66 +370,8 @@ internal class SubscriptionServiceImpl : SubscriptionService {
         }
     }
 
-    /**
-     * Google Play 结算库版本 5.0 之前
-     * 根据productIds查询对应订阅商品详情
-     * @param productIds 商品ids
-     * */
-    private suspend fun querySkuSubscribeProductDetails(
-        productIds: List<String>
-    ) {
-        val skuDetailsParams = SkuDetailsParams.newBuilder().setSkusList(productIds)
-            .setType(BillingClient.ProductType.SUBS).build()
-        val skuDetailsResult = withContext(Dispatchers.IO) {
-            GooglePayClient.getInstance().getBillingClient()
-                .querySkuDetails(skuDetailsParams)
-        }
-        if (skuDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-            val skuDetails = skuDetailsResult.skuDetailsList
-            skuDetails?.let {
-                it.forEach { skuDetail ->
-                    subscribeDetailsMap[skuDetail.sku] = AppSubscribeDetails(
-                        skuDetail.sku,
-                        skuDetail.title
-                    )
-                    googleSkuSubscribeDetailsMap[skuDetail.sku] = skuDetail
-                }
-                if (GooglePayClient.getInstance().deBug) {
-                    GooglePayClient.getInstance().appBillingService.printLog(
-                        GooglePayClient.TAG,
-                        "Get a list of skuSubscribeProduct (subs) details configured by Google Play----> |skuDetails : $skuDetails"
-                    )
-                }
-            }
-        } else {
-            if (GooglePayClient.getInstance().deBug) {
-                GooglePayClient.getInstance().appBillingService.printLog(
-                    GooglePayClient.TAG,
-                    "fail code : ${skuDetailsResult.billingResult.responseCode} | message : ${skuDetailsResult.billingResult.debugMessage}"
-                )
-            }
-        }
-    }
-
 
     override fun querySubsOfferDetails(subsOfferParams: SubsOfferParams): AppSubscribeDetails? {
-        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
-        //兼容4.0老版本
-        if (isOldVersion) {
-            val skuDetails = googleSkuSubscribeDetailsMap[subsOfferParams.productId] ?: return null
-            return AppSubscribeDetails(
-                skuDetails.sku,
-                skuDetails.title,
-                mutableListOf(
-                    PricingPhase(
-                        skuDetails.price,
-                        skuDetails.priceAmountMicros,
-                        skuDetails.priceCurrencyCode
-                    )
-                )
-            )
-        }
-
         val productDetails = googleSubscribeDetailsMap[subsOfferParams.productId] ?: return null
         val subscriptionOfferDetails =
             PayUtils.getSubsOfferDetails(productDetails, subsOfferParams) ?: return null

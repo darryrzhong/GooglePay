@@ -3,6 +3,9 @@ package com.google.pay.lifecyc
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.google.pay.billing.GooglePayClient
 
 /**
@@ -13,7 +16,8 @@ import com.google.pay.billing.GooglePayClient
  *     @since  : 2025/11/26
  * </pre>
  */
-internal class ActivityLifecycleCallback : Application.ActivityLifecycleCallbacks {
+internal class ActivityLifecycleCallback : Application.ActivityLifecycleCallbacks,
+    DefaultLifecycleObserver {
     //内部刷新库存 & 商品的时间间隔
     internal var refreshInterval = 15
     internal val activityList = mutableListOf<Class<out Activity>>()
@@ -60,4 +64,11 @@ internal class ActivityLifecycleCallback : Application.ActivityLifecycleCallback
     override fun onActivityStopped(activity: Activity) {
 
     }
+
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        GooglePayClient.getInstance().startConnection()
+    }
+
+
 }

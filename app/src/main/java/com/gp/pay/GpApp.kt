@@ -20,7 +20,9 @@ class GpApp : Application() {
         GooglePayClient.getInstance()
             .setDebug(true)
             .setSubscriptionMode(SubscriptionMode.SingleMode)
-            .setSubscription(true)
+            .setSubscription(false)
+            .setInterval(15)
+            .registerActivitys(arrayListOf(MainActivity::class.java))
             .initBillingClient(this, GooglePayServiceImpl.instance)
     }
 }

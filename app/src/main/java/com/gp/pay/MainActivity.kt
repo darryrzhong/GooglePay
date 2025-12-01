@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+//        GooglePayClient.getInstance().endConnection()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

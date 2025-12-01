@@ -43,6 +43,5 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        GooglePayClient.getInstance().startConnection()
     }
 }

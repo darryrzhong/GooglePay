@@ -20,7 +20,7 @@ class GooglePayServiceImpl private constructor() : GooglePayService {
     }
 
     override suspend fun getOneTimeConsumableProducts(): List<String> {
-        return arrayListOf("")
+        return arrayListOf("com.niki.product.1","com.niki.product.2","com.niki.product.3")
     }
 
     override suspend fun getOneTimeNonConsumableProducts(): List<String> {
@@ -28,7 +28,7 @@ class GooglePayServiceImpl private constructor() : GooglePayService {
     }
 
     override suspend fun getSubscribeProducts(): List<String> {
-        return arrayListOf("")
+        return arrayListOf("com.niki.vip.1week","com.niki.vip.1month")
     }
 
     override suspend fun handlePurchasesProcess(

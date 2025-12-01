@@ -33,10 +33,11 @@ android {
 }
 
 dependencies {
-    implementation(libs.play.services)
+//    implementation(libs.play.services)
     api(libs.billing.client)
     implementation(libs.billing.client.ktx)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.lifecycle.process)
     implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

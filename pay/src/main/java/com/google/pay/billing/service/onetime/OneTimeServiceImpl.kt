@@ -9,13 +9,10 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
-import com.android.billingclient.api.SkuDetails
-import com.android.billingclient.api.SkuDetailsParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.consumePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
-import com.android.billingclient.api.querySkuDetails
 import com.google.pay.AppBillingResponseCode
 import com.google.pay.billing.GooglePayClient
 import com.google.pay.handleTryEach
@@ -50,7 +47,6 @@ internal class OneTimeServiceImpl : OneTimeService {
     //google play商品详情列表
     private val productDetailsMap = ConcurrentHashMap<String, AppProductDetails>()
     private val googleProductDetailsMap = ConcurrentHashMap<String, ProductDetails>()
-    private val googleSkuDetailsMap = ConcurrentHashMap<String, SkuDetails>()
 
     //非消耗型商品,这种商品比较特殊,缓存一下
     private var _noConsumableProductIds = CopyOnWriteArrayList<String>()
@@ -92,12 +88,7 @@ internal class OneTimeServiceImpl : OneTimeService {
             }
             return launchResult
         }
-        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
-        return if (isOldVersion) {
-            launchBillingSku(activity, billingParams)
-        } else {
-            launchBilling(activity, billingParams)
-        }
+        return launchBilling(activity, billingParams)
     }
 
 
@@ -130,12 +121,7 @@ internal class OneTimeServiceImpl : OneTimeService {
             _noConsumableProductIds.clear()
             _noConsumableProductIds.addAll(noConsumableProductIds)
         }
-        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
-        if (isOldVersion) {
-            querySkuDetailsList(productIds)
-        } else {
-            queryProductDetailsList(productIds)
-        }
+        queryProductDetailsList(productIds)
     }
 
     override suspend fun queryProductDetails(productIds: List<String>): List<AppProductDetails> {
@@ -158,12 +144,7 @@ internal class OneTimeServiceImpl : OneTimeService {
             return localDetails
         }
         //2. 去google play 查询
-        val isOldVersion = GooglePayClient.getInstance().isOldVersion()
-        return if (isOldVersion) {
-            querySkuDetailsList(productIds)
-        } else {
-            queryProductDetailsList(productIds)
-        }
+        return queryProductDetailsList(productIds)
     }
 
 
@@ -321,56 +302,6 @@ internal class OneTimeServiceImpl : OneTimeService {
             }).launchIn(GooglePayClient.getInstance().billingMainScope)
 
         return Closeable { job.cancel() }
-    }
-
-
-    /**
-     * 启动google pay
-     * Google Play 结算库版本 5.0 之前
-     * */
-    private fun launchBillingSku(
-        activity: Activity, billingParams: BillingParams
-    ): AppBillingResult {
-        //兼容Google Play 结算库版本 4.0
-        val skuDetails = googleSkuDetailsMap[billingParams.productId]
-        if (skuDetails == null) {
-            val launchResult = AppBillingResult(
-                AppBillingResponseCode.FAIL,
-                "launch fail : The corresponding ${billingParams.productId} could not be found,googleSkuDetails does not exist"
-            )
-            if (GooglePayClient.getInstance().deBug) {
-                GooglePayClient.getInstance().appBillingService.printLog(
-                    GooglePayClient.TAG,
-                    "launch fail : The corresponding ${billingParams.productId} could not be found,googleSkuDetails does not exist"
-                )
-            }
-            return launchResult
-        }
-        val jsonObject = JSONObject()
-        jsonObject.put("charge_no", billingParams.chargeNo)
-        jsonObject.put("sku_type", BillingClient.ProductType.INAPP)
-        val billingFlowParams = BillingFlowParams.newBuilder().setSkuDetails(skuDetails)
-            .setObfuscatedAccountId(billingParams.accountId)
-            .setObfuscatedProfileId(jsonObject.toString()).build()
-
-        val billingResult = GooglePayClient.getInstance().getBillingClient()
-            .launchBillingFlow(activity, billingFlowParams)
-        val launchResult = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-            AppBillingResult(AppBillingResponseCode.OK, billingParams.chargeNo)
-        } else {
-            AppBillingResult(
-                billingResult.responseCode,
-                billingResult.debugMessage
-            )
-        }
-        if (GooglePayClient.getInstance().deBug) {
-            GooglePayClient.getInstance().appBillingService.printLog(
-                GooglePayClient.TAG,
-                "launchBillingFlow  : code : ${billingResult.responseCode} | message : ${billingResult.debugMessage}"
-            )
-        }
-        return launchResult
-
     }
 
 
@@ -534,53 +465,4 @@ internal class OneTimeServiceImpl : OneTimeService {
         }
     }
 
-
-    /**
-     * Google Play 结算库版本 5.0 之前
-     * 根据productIds查询对应商品详情
-     * @param productIds 商品ids
-     * */
-    private suspend fun querySkuDetailsList(
-        productIds: List<String>
-    ): List<AppProductDetails> {
-        val productDetailsList = mutableListOf<AppProductDetails>()
-        val skuDetailsParams = SkuDetailsParams.newBuilder().setSkusList(productIds)
-            .setType(BillingClient.ProductType.INAPP).build()
-        val skuDetailsResult = withContext(Dispatchers.IO) {
-            GooglePayClient.getInstance().getBillingClient()
-                .querySkuDetails(skuDetailsParams)
-        }
-        if (skuDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-            val skuDetails = skuDetailsResult.skuDetailsList
-            skuDetails?.let {
-                it.forEach { skuDetail ->
-                    val appProductDetails = AppProductDetails(
-                        skuDetail.sku,
-                        skuDetail.title,
-                        skuDetail.price,
-                        skuDetail.priceAmountMicros,
-                        skuDetail.priceCurrencyCode
-                    )
-                    productDetailsMap[skuDetail.sku] = appProductDetails
-                    googleSkuDetailsMap[skuDetail.sku] = skuDetail
-                    productDetailsList.add(appProductDetails)
-                }
-            }
-            if (GooglePayClient.getInstance().deBug) {
-                GooglePayClient.getInstance().appBillingService.printLog(
-                    GooglePayClient.TAG,
-                    "Get a list of sku (inapp) details configured by Google Play----> |skuDetails : $skuDetails"
-                )
-            }
-            return productDetailsList
-        } else {
-            if (GooglePayClient.getInstance().deBug) {
-                GooglePayClient.getInstance().appBillingService.printLog(
-                    GooglePayClient.TAG,
-                    "fail code : ${skuDetailsResult.billingResult.responseCode} | message : ${skuDetailsResult.billingResult.debugMessage}"
-                )
-            }
-            return productDetailsList
-        }
-    }
 }

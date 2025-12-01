@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingResult
@@ -76,10 +77,12 @@ class GooglePayClient private constructor() {
     //用单例，以避免对某一个事件进行多次 PurchasesUpdatedListener 回调
     private val billingClient: BillingClient by lazy {
         checkInitialized()
-        BillingClient.newBuilder(applicationContext).setListener(purchasesUpdatedListener)
+        BillingClient.newBuilder(applicationContext)
+            .setListener(purchasesUpdatedListener)
             .enablePendingPurchases(
                 PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()
             )
+            .enableAutoServiceReconnection()
             .build()
     }
 
@@ -146,48 +149,6 @@ class GooglePayClient private constructor() {
         }
     }
 
-
-    //Google play 连接状态监听器
-    private val billingClientStateListener = object : BillingClientStateListener {
-        override fun onBillingSetupFinished(billingResult: BillingResult) {
-            isReconnecting.set(false)
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                //连接成功，可以进行查询商品等操作
-                isConnectionEstablished = true
-                if (deBug) {
-                    appBillingService.printLog(TAG, "Google play connection successfully")
-                }
-                //刷新一下真实配置列表
-                queryProductDetails()
-                //去刷新一下库存消耗
-                queryPurchases()
-            } else {
-                isConnectionEstablished = false
-                if (deBug) {
-                    appBillingService.printLog(
-                        TAG,
-                        "Google play connection failed | code : ${billingResult.responseCode} | message : ${billingResult.debugMessage} "
-                    )
-                }
-                billingScope.launch {
-                    delay(2000)
-                    //连接Google 失败，重新连接
-                    retryBillingServiceConnection()
-                }
-            }
-        }
-
-        override fun onBillingServiceDisconnected() {
-            isConnectionEstablished = false
-            tries = 1  // 断开连接时重置重试计数器
-            //连接已经断开，重新连接
-            retryBillingServiceConnection()
-            if (deBug) {
-                appBillingService.printLog(TAG, "Google play disconnected")
-            }
-        }
-    }
-
     /**
      * 获取服务-Java调用
      * @param clazz 服务类型
@@ -208,6 +169,12 @@ class GooglePayClient private constructor() {
 
     private fun queryPurchases() {
         billingScope.launch {
+            //1. 刷新一下真实配置列表
+            getService<OneTimeService>().queryProductDetails()
+            if (subscription) {
+                getService<SubscriptionService>().queryProductDetails()
+            }
+            // 2. 刷新一下库存消耗
             getService<OneTimeService>().queryPurchases()
             if (subscription) {
                 getService<SubscriptionService>().queryPurchases()
@@ -216,14 +183,6 @@ class GooglePayClient private constructor() {
 
     }
 
-    private fun queryProductDetails() {
-        billingScope.launch {
-            getService<OneTimeService>().queryProductDetails()
-            if (subscription) {
-                getService<SubscriptionService>().queryProductDetails()
-            }
-        }
-    }
 
     private suspend fun handlePurchases(purchases: List<Purchase>, isPay: Boolean) {
         getService<OneTimeService>().handlePurchases(purchases, isPay)
@@ -241,6 +200,7 @@ class GooglePayClient private constructor() {
         applicationContext = context
         this.appBillingService = appBillingService
         context.registerActivityLifecycleCallbacks(activityLifecycleCallback)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(activityLifecycleCallback)
     }
 
     fun setDebug(isDebug: Boolean) = apply {
@@ -269,6 +229,11 @@ class GooglePayClient private constructor() {
         }
     }
 
+    fun endConnection() {
+        if (billingClient.isReady) {
+            billingClient.endConnection()
+        }
+    }
 
     /**
      * 建立google play 连接
@@ -279,49 +244,17 @@ class GooglePayClient private constructor() {
         }
         //已经连接,刷新一下配置
         if (billingClient.isReady) {
-            //刷新一下真实配置列表
-            queryProductDetails()
             //去刷新一下库存消耗
             queryPurchases()
             return
         }
-        //建立连接
-        if (isReconnecting.compareAndSet(false, true)) {
-            tries = 1
-            isConnectionEstablished = false
-            billingClient.startConnection(billingClientStateListener)
-        }
     }
 
-    /**
-     * 重新连接Google play
-     * */
-    private fun retryBillingServiceConnection() {
-        if (isReconnecting.compareAndSet(false, true)) {
-            if (tries <= MAX_RETRY_ATTEMPT && !isConnectionEstablished) {
-                try {
-                    if (deBug) {
-                        appBillingService.printLog(TAG, "Google play Reconnect $tries")
-                        Log.d(TAG, "Google play Reconnect $tries")
-                    }
-                    tries++  // 在尝试连接前递增
-                    billingClient.startConnection(billingClientStateListener)
-                } catch (e: Exception) {
-                    isReconnecting.set(false)  // 异常时重置状态
-                    e.message?.let {
-                        Log.d(TAG, it)
-                        appBillingService.printLog(TAG, it)
-                    }
-                }
-            } else {
-                // 超过最大重试次数，停止重连
-                isReconnecting.set(false)
-                if (deBug) {
-                    appBillingService.printLog(
-                        TAG,
-                        "Google play failed to reconnect, the maximum number of retries has been reached: $MAX_RETRY_ATTEMPT"
-                    )
-                }
+    private fun refreshPurchases() {
+        billingScope.launch {
+            getService<OneTimeService>().queryPurchases()
+            if (subscription) {
+                getService<SubscriptionService>().queryPurchases()
             }
         }
     }
