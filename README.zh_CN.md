@@ -281,4 +281,4 @@ GooglePayClient.getInstance().endConnection() // 可选：应用终止时手动�
 * **消耗/确认:** Google 要求在 3 天内确认 (订阅) 或消耗 (消耗品) 购买，否则将会退款。您实现的 `GooglePayService` 中的 `handlePurchasesProcess` 是在验证后触发此操作的地方。
 
 ### 11. Api Docs
-[Api Docs](./API_DOCS.md)
+[Api Docs](./API_DOCS.zh_CN.md)

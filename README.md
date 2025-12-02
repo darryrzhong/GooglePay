@@ -281,4 +281,4 @@ GooglePayClient.getInstance().endConnection() // Optional: Manually end connecti
 * **Consumption/Acknowledgement:** Google requires purchases to be acknowledged (subscriptions) or consumed (consumables) within 3 days, or they will be refunded. The `handlePurchasesProcess` in your `GooglePayService` implementation is the place to trigger this after verification.
 
 ### 11. Api Docs
-[Api Docs](./API_DOCS.zh_CN.md)
+[Api Docs](./API_DOCS.md)
