@@ -1,4 +1,4 @@
-<img src="./logo.png" alt="GPay Logo" width="553" />
+<img src="./logo.png" alt="GPay Logo"  />
 
 # GooglePay
 
