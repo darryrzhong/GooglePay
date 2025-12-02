@@ -32,7 +32,7 @@ allprojects {
 
 ```gradle
 dependencies {
-    implementation 'com.github.darryrzhong:GooglePay:1.0.0' // Check for the latest version
+    implementation 'com.github.darryrzhong:GooglePay:8.1.0-1.1' // Check for the latest version
 }
 ```
 
@@ -279,3 +279,6 @@ GooglePayClient.getInstance().endConnection() // Optional: Manually end connecti
 * **Lifecycle:** The library handles `BillingClient` lifecycle management.
 * **Verification:** Always verify purchases on your backend server before granting entitlement to prevent fraud.
 * **Consumption/Acknowledgement:** Google requires purchases to be acknowledged (subscriptions) or consumed (consumables) within 3 days, or they will be refunded. The `handlePurchasesProcess` in your `GooglePayService` implementation is the place to trigger this after verification.
+
+### 11. Api Docs
+[Api Docs](./API_DOCS.zh_CN.md)

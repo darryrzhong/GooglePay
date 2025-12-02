@@ -32,7 +32,7 @@ allprojects {
 
 ```gradle
 dependencies {
-    implementation 'com.github.darryrzhong:GooglePay:1.0.0' // 请检查最新版本
+    implementation 'com.github.darryrzhong:GooglePay:8.1.0-1.1' // 请检查最新版本
 }
 ```
 
@@ -279,3 +279,6 @@ GooglePayClient.getInstance().endConnection() // 可选：应用终止时手动�
 * **生命周期:** 库会处理 `BillingClient` 的生命周期管理。
 * **验证:** 务必在授予权益之前在您的后端服务器上验证购买，以防止欺诈。
 * **消耗/确认:** Google 要求在 3 天内确认 (订阅) 或消耗 (消耗品) 购买，否则将会退款。您实现的 `GooglePayService` 中的 `handlePurchasesProcess` 是在验证后触发此操作的地方。
+
+### 11. Api Docs
+[Api Docs](./API_DOCS.md)
