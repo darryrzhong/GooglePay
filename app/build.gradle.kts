@@ -10,8 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-//        applicationId = "com.gp.pay"
-        applicationId = "com.glive.niki"
+        applicationId = "com.gp.pay"
         minSdk = 24
         targetSdk = 36
         versionCode = 708
@@ -32,16 +31,16 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            storeFile = file("sign/release/niki_release.jks")
-            storePassword = "niki-123456"
-            keyPassword = "niki-123456"
-            keyAlias = "niki-alias"
+            storeFile = file("sign/release/gpay_release.jks")
+            storePassword = "123456"
+            keyPassword = "123456"
+            keyAlias = "gpay"
         }
         create("release") {
-            storeFile = file("sign/release/niki_release.jks")
-            storePassword = "niki-123456"
-            keyAlias = "niki-alias"
-            keyPassword = "niki-123456"
+            storeFile = file("sign/release/gpay_release.jks")
+            storePassword = "123456"
+            keyAlias = "gpay"
+            keyPassword = "123456"
         }
     }
 

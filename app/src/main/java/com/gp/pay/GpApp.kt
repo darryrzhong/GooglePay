@@ -19,10 +19,10 @@ class GpApp : Application() {
 
         GooglePayClient.getInstance()
             .setDebug(true)
-            .setSubscriptionMode(SubscriptionMode.SingleMode)
-            .setSubscription(true)
-            .setInterval(15)
-            .registerActivitys(arrayListOf(MainActivity::class.java))
+            .setSubscriptionMode(SubscriptionMode.SingleMode)  //单订阅
+            .setSubscription(true) //支持订阅
+            .setInterval(15) //自动刷新间隔
+            .registerActivitys(arrayListOf(MainActivity::class.java))  //自动刷新页面注册
             .initBillingClient(this, GooglePayServiceImpl.instance)
     }
 }

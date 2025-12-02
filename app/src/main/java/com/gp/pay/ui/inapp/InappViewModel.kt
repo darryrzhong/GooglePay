@@ -8,10 +8,11 @@ class InappViewModel : ViewModel() {
 
     private val _products = MutableLiveData<List<String>>().apply {
         value = arrayListOf(
-            "com.niki.product.1",
-            "com.niki.product.2",
-            "com.niki.product.3",
-            "com.niki.product.4"
+            "com.example.product.1",
+            "com.example.product.2",
+            "com.example.product.3",
+            "com.example.product.3",
+            "com.example.product.5",
         )
     }
     val products: LiveData<List<String>> = _products

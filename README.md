@@ -3,6 +3,7 @@
 # GooglePay
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![](https://jitpack.io/v/darryrzhong/GooglePay.svg)](https://jitpack.io/#darryrzhong/GooglePay)
 
 GooglePay is an Android payment library based on the Google Play Billing Library, designed to simplify the Google payment integration process and provide a unified interface for managing one-time purchases and subscriptions.
 
