@@ -1,11 +1,10 @@
-package com.gp.pay.ui.subs
+package com.gp.pay.ui.inapp
 
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
@@ -13,24 +12,22 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.pay.AppBillingResponseCode
 import com.google.pay.billing.GooglePayClient
 import com.google.pay.billing.service.onetime.OneTimeService
-import com.google.pay.billing.service.subscription.SubscriptionService
 import com.google.pay.model.BillingParams
 import com.google.pay.model.BillingPayEvent
-import com.google.pay.model.BillingSubsParams
 import com.google.pay.observePayEvent
-import com.gp.pay.databinding.FragmentSubsBinding
+import com.gp.pay.databinding.FragmentInappBinding
 import com.gp.pay.dp
 import com.gp.pay.showTips
-import com.gp.pay.ui.inapp.InAppAdapter
 
-class SubsFragment : Fragment() {
+class InAppFragment : Fragment() {
 
-    private var _binding: FragmentSubsBinding? = null
-    private val subsViewModel by lazy { ViewModelProvider(this).get(SubsViewModel::class.java) }
+    private var _binding: FragmentInappBinding? = null
 
+    // This property is only valid between onCreateView and
+    // onDestroyView.
     private val binding get() = _binding!!
-
-    private val adapter = SubsAdapter()
+    private val inappViewMode by lazy { ViewModelProvider(this).get(InappViewModel::class.java) }
+    private val adapter = InAppAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,16 +35,16 @@ class SubsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
 
-        _binding = FragmentSubsBinding.inflate(inflater, container, false)
+        _binding = FragmentInappBinding.inflate(inflater, container, false)
         val root: View = binding.root
-        initSubs()
-
+        initProducts()
         return root
     }
 
-    private fun initSubs() {
-        binding.rvSubs.layoutManager = GridLayoutManager(requireContext(), 2)
-        binding.rvSubs.addItemDecoration(object : RecyclerView.ItemDecoration() {
+    private fun initProducts() {
+
+        binding.rvInapp.layoutManager = GridLayoutManager(requireContext(), 2)
+        binding.rvInapp.addItemDecoration(object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(
                 outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State
             ) {
@@ -58,24 +55,24 @@ class SubsFragment : Fragment() {
                 outRect.bottom = 12f.dp
             }
         });
-        binding.rvSubs.adapter = adapter
+        binding.rvInapp.adapter = adapter
         adapter.setOnItemClickListener { adapter, view, position ->
-            val subsData = adapter.getItem(position)
+            val productId = adapter.getItem(position)
             //1. 先去业务服务端生产一个业务充值订单,后续用这个订单和gp订单绑定
             val changeNo = "22553355"
-            val billingSubsParams = BillingSubsParams.Builder()
-                .setAccountId("202511214")
-                .setProductId(subsData.productId)
-                .setBasePlanId(subsData.basePlanId)
-                .setOfferId(subsData.offerId)
-                .build()
-            val result = GooglePayClient.getInstance().getPayService<SubscriptionService>()
-                .launchBillingFlow(requireActivity(), billingSubsParams)
+            val billingParams =
+                BillingParams.Builder()
+                    .setAccountId("202511214")
+                    .setProductId(productId)
+                    .setChargeNo(changeNo)
+                    .build()
+            val result = GooglePayClient.getInstance().getPayService<OneTimeService>()
+                .launchBillingFlow(requireActivity(), billingParams)
             if (result.code != AppBillingResponseCode.OK) {
                 result.message.showTips(requireContext())
             }
         }
-        subsViewModel.subs.observe(viewLifecycleOwner) {
+        inappViewMode.products.observe(viewLifecycleOwner) {
             adapter.submitList(it)
         }
         observePayEvent { payEvent ->
@@ -91,7 +88,6 @@ class SubsFragment : Fragment() {
                 }
             }
         }
-
     }
 
     override fun onDestroyView() {

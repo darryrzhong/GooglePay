@@ -13,7 +13,7 @@
 
     <fragment
         android:id="@+id/nav_inapp"
-        android:name="com.gp.pay.ui.inapp.InappFragment"
+        android:name="com.gp.pay.ui.inapp.InAppFragment"
         android:label="@string/menu_inapp"
         tools:layout="@layout/fragment_inapp" />
 

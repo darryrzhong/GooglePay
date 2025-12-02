@@ -27,21 +27,51 @@ class GooglePayServiceImpl private constructor() : GooglePayService {
     override suspend fun getOneTimeConsumableProducts(): List<String> =
         suspendCancellableCoroutine { continuation ->
             //网络请求获取google play后台添加的商品productId
-            val productIds =
-                arrayListOf("com.niki.product.1", "com.niki.product.2", "com.niki.product.3")
-            continuation.resume(productIds)
+            val productList = listOf(
+                "com.niki.bag.7",
+                "com.niki.product.1",
+                "com.niki.product.2",
+                "com.niki.product.3",
+                "com.niki.product.4",
+                "com.niki.product.20",
+                "com.niki.product.21",
+                "com.niki.product.22",
+                "com.niki.product.23",
+                "com.niki.product.8",
+                "com.niki.bag.11",
+                "com.niki.bag.12",
+                "com.niki.bag.13",
+                "com.niki.bag.14",
+                "com.niki.bag.15",
+                "com.niki.bag.16",
+                "com.niki.bag.17",
+                "com.niki.vip.1week",
+                "com.niki.vip.1month",
+                "com.niki.vip.3month",
+                "com.niki.svip.1month",
+                "com.niki.svip.3month",
+                "com.niki.svip.1year"
+            )
+            continuation.resume(productList)
         }
 
     override suspend fun getOneTimeNonConsumableProducts(): List<String> {
-        return arrayListOf("")
+        return arrayListOf()
     }
 
     override suspend fun getSubscribeProducts(): List<String> =
         suspendCancellableCoroutine { continuation ->
             //网络请求获取google play后台添加的商品productId
-            val productIds =
-                arrayListOf("com.niki.product.1", "com.niki.product.2", "com.niki.product.3")
-            continuation.resume(productIds)
+            val subsList = listOf(
+                "com.niki.vip.1week",
+                "com.niki.vip.1month",
+                "com.niki.vip.3month",
+                "com.niki.svip.1month",
+                "com.niki.svip.3month",
+                "com.niki.svip.1year"
+            )
+
+            continuation.resume(subsList)
         }
 
     override suspend fun handlePurchasesProcess(
