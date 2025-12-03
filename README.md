@@ -280,6 +280,10 @@ GooglePayClient.getInstance().endConnection() // Optional: Manually end connecti
 * **Verification:** Always verify purchases on your backend server before granting entitlement to prevent fraud.
 * **Consumption/Acknowledgement:** Google requires purchases to be acknowledged (subscriptions) or consumed (consumables) within 3 days, or they will be refunded. The `handlePurchasesProcess` in your `GooglePayService` implementation is the place to trigger this after verification.
 
-### 11. Api Docs
+### 12. Api Docs
 [Api Docs](./API_DOCS.md)
 
+### More Guide
+[Google Play Billing Guide](./GOOGLE_PLAY_BILLING_GUIDE.md)
+[Consumable Purchase Flow](./CONSUMABLE_PURCHASE_FLOW.md)
+[Subscription Purchase Flow](./SUBSCRIPTION_PURCHASE_FLOW.md)
