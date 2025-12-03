@@ -282,3 +282,4 @@ GooglePayClient.getInstance().endConnection() // Optional: Manually end connecti
 
 ### 11. Api Docs
 [Api Docs](./API_DOCS.md)
+
