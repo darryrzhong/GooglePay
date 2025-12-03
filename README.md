@@ -284,6 +284,6 @@ GooglePayClient.getInstance().endConnection() // Optional: Manually end connecti
 [Api Docs](./API_DOCS.md)
 
 ### More Guide
-[Google Play Billing Guide](./GOOGLE_PLAY_BILLING_GUIDE.md)
-[Consumable Purchase Flow](./CONSUMABLE_PURCHASE_FLOW.md)
-[Subscription Purchase Flow](./SUBSCRIPTION_PURCHASE_FLOW.md)
+* [Google Play Billing Guide](./GOOGLE_PLAY_BILLING_GUIDE.md)
+* [Consumable Purchase Flow](./CONSUMABLE_PURCHASE_FLOW.md)
+* [Subscription Purchase Flow](./SUBSCRIPTION_PURCHASE_FLOW.md)

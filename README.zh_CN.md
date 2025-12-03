@@ -284,6 +284,6 @@ GooglePayClient.getInstance().endConnection() // 可选：应用终止时手动�
 [Api Docs](./API_DOCS.zh_CN.md)
 
 ### 更多指南
-[Google Play 结算系统入门指南](./GOOGLE_PLAY_BILLING_GUIDE.zh_CN.md)
-[GooglePay 消耗商品购买流程](./CONSUMABLE_PURCHASE_FLOW.zh_CN.md)
-[GooglePay 订阅商品购买流程](./SUBSCRIPTION_PURCHASE_FLOW.zh_CN.md)
+* [Google Play 结算系统入门指南](./GOOGLE_PLAY_BILLING_GUIDE.zh_CN.md)
+* [GooglePay 消耗商品购买流程](./CONSUMABLE_PURCHASE_FLOW.zh_CN.md)
+* [GooglePay 订阅商品购买流程](./SUBSCRIPTION_PURCHASE_FLOW.zh_CN.md)
