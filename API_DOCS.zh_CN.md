@@ -104,6 +104,125 @@ val params = BillingParams.Builder()
 | `chargeNo` | String | 业务方生成的订单号 |
 | `offerToken` | String | 订阅商品的 Offer Token (从 `AppSubscribeDetails` 获取) |
 
+### 4.3 AppBillingResponseCode (响应码)
+
+`AppBillingResponseCode` 定义了 Google Play Billing API 返回的所有可能的响应码。
+
+| 代码 | 常量 | 说明 |
+| :--- | :--- | :--- |
+| `0` | `OK` | 请求成功 |
+| `-200` | `FAIL` | 业务错误 |
+| `-3` | `SERVICE_TIMEOUT` | 请求超时（已废弃，建议使用 `SERVICE_UNAVAILABLE`） |
+| `-2` | `FEATURE_NOT_SUPPORTED` | 当前设备或 Google Play 不支持该功能（如订阅、商品详情等） |
+| `-1` | `SERVICE_DISCONNECTED` | 与 Google Play Billing 服务断开连接，可尝试重新连接 |
+| `1` | `USER_CANCELED` | 用户在结算流程中主动取消 |
+| `2` | `SERVICE_UNAVAILABLE` | 网络问题或 Google Play 服务不可用（如正在更新、离线等） |
+| `3` | `BILLING_UNAVAILABLE` | 当前设备上不支持 Google Play 结算 |
+| `4` | `ITEM_UNAVAILABLE` | 商品在当前区域或账户不可用（例如未发布或已下架） |
+| `5` | `DEVELOPER_ERROR` | 开发者调用错误（如参数错误、API 调用顺序错误） |
+| `6` | `ERROR` | 一般错误（系统内部异常、未知问题等） |
+| `7` | `ITEM_ALREADY_OWNED` | 商品已拥有（如未消耗的消耗型商品或已购买的非消耗型商品） |
+| `8` | `ITEM_NOT_OWNED` | 操作失败，因为商品未拥有（尝试消耗或确认未拥有的商品） |
+| `12` | `NETWORK_ERROR` | 网络错误（新引入，用于明确网络失败场景） |
+
+**使用示例：**
+
+```kotlin
+when (responseCode) {
+    AppBillingResponseCode.OK -> {
+        // 处理成功
+    }
+    AppBillingResponseCode.USER_CANCELED -> {
+        // 用户取消支付
+    }
+    AppBillingResponseCode.ITEM_ALREADY_OWNED -> {
+        // 商品已拥有
+    }
+    AppBillingResponseCode.NETWORK_ERROR -> {
+        // 网络错误，可以重试
+    }
+    else -> {
+        // 处理其他错误
+    }
+}
+```
+
+### 4.4 AppProductDetails (商品详情模型)
+
+`AppProductDetails` 表示一次性购买商品（消耗型或非消耗型）的详细信息。
+
+| 字段 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `productId` | String | 商品 ID（例如 `com.xx.product.1`） |
+| `productName` | String | 商品名称 |
+| `formattedPrice` | String | 格式化后的价格字符串（例如 `"€7.99"`） |
+| `priceAmountMicros` | Long | 以微单位表示的价格（例如价格为 `"€7.99"` 时，该值为 `7990000`） |
+| `priceCurrencyCode` | String | 货币代码（例如 `"EUR"`） |
+
+**查询商品详情示例：**
+
+```kotlin
+val oneTimeService = GooglePayClient.getInstance().getPayService<OneTimeService>()
+
+lifecycleScope.launch {
+    oneTimeService.queryProductDetails(listOf("coin_100", "coin_500")).collect { result ->
+        result.onSuccess { productList ->
+            productList.forEach { product ->
+                Log.d("Product", "ID: ${product.productId}")
+                Log.d("Product", "名称: ${product.productName}")
+                Log.d("Product", "价格: ${product.formattedPrice}")
+                Log.d("Product", "货币: ${product.priceCurrencyCode}")
+            }
+        }
+        result.onFailure { error ->
+            Log.e("Product", "查询失败: ${error.message}")
+        }
+    }
+}
+```
+
+### 4.5 AppSubscribeDetails (订阅详情模型)
+
+`AppSubscribeDetails` 表示订阅商品的详细信息，包括定价阶梯。
+
+| 字段 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `productId` | String | 订阅商品 ID（例如 `com.xx.subscription.monthly`） |
+| `productName` | String | 订阅商品名称 |
+| `pricingPhases` | List&lt;PricingPhase&gt; | 定价阶梯列表（支持试用期、介绍价格等） |
+
+**PricingPhase 字段：**
+
+| 字段 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `formattedPrice` | String | 格式化后的价格字符串（例如 `"€7.99"`） |
+| `priceAmountMicros` | Long | 以微单位表示的价格（例如价格为 `"€7.99"` 时，该值为 `7990000`） |
+| `priceCurrencyCode` | String | 货币代码（例如 `"EUR"`） |
+
+**查询订阅详情示例：**
+
+```kotlin
+val subscriptionService = GooglePayClient.getInstance().getPayService<SubscriptionService>()
+
+lifecycleScope.launch {
+    val params = SubsOfferParams.Builder()
+        .setProductIds(listOf("monthly_vip", "yearly_vip"))
+        .build()
+    
+    subscriptionService.querySubsOfferDetails(params).collect { result ->
+        result.onSuccess { subscriptionList ->
+            subscriptionList.forEach { subscription ->
+                Log.d("Subscription", "ID: ${subscription.productId}")
+                Log.d("Subscription", "名称: ${subscription.productName}")
+                subscription.pricingPhases.forEach { phase ->
+                    Log.d("Subscription", "阶梯价格: ${phase.formattedPrice}")
+                }
+            }
+        }
+    }
+}
+```
+
 ## 5. 支付事件监听 (Payment Event Listening)
 
 `GooglePayClient` 使用 Kotlin Coroutines 的 `SharedFlow` 发送支付事件。
